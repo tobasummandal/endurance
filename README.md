@@ -1,117 +1,133 @@
-# Dry Dock 2026 starter — Next.js + Supabase
+# Quantum Routing Brain
 
-Your team's app. Provisioned by VanderBot, ready to ship.
+A demo MVP for the **Vanderbilt Dry Dock 2026 Build Week, Xtremis AI Challenge 2**.
 
-## What's in here
-
-- **Next.js 15** — App Router, Server Components, Server Actions
-- **Supabase** — Postgres + auth + storage in one managed service
-- **Tailwind CSS v4** — utility-first styling (no config bloat)
-- **Vercel** — auto-deploys on push to `main`
-
-## Run locally
-
-```bash
-# 1. Install deps
-npm install
-
-# 2. Wire env vars
-cp .env.local.example .env.local
-# → edit .env.local; VanderBot already pushed the values. If you cloned
-#   manually, grab them from your Supabase dashboard → Project Settings → API.
-
-# 3. Go
-npm run dev
-```
-
-Open http://localhost:3000 — the stack status card tells you if Supabase is connected.
-
-## What to try first
-
-1. **Visit `/`** — home page with a live Supabase connectivity check.
-2. **Visit `/demo`** — CRUD example against a `notes` table. First run will
-   show "table doesn't exist yet" — click through the error to see the SQL.
-3. **Create the `notes` table** — open Supabase Dashboard → SQL Editor, paste:
-
-   ```sql
-   create table if not exists notes (
-     id uuid primary key default gen_random_uuid(),
-     body text not null check (length(body) between 1 and 500),
-     created_at timestamptz not null default now()
-   );
-   alter table notes enable row level security;
-   create policy "anon can read" on notes for select using (true);
-   create policy "anon can insert" on notes for insert with check (true);
-   ```
-
-4. **Refresh `/demo`** — now you have a working form that writes to Postgres.
-5. **Clone the pattern.** Look at `app/demo/page.js` + `app/demo/form.js` +
-   `lib/supabase-server.js` — that's the full recipe for any server-side CRUD.
-
-## Deploying
-
-Already set up. Push to `main`:
-
-```bash
-git add .
-git commit -m "your change"
-git push
-```
-
-Vercel builds + deploys on every push. Your live URL is in the Vercel dashboard
-(or ask VanderBot: "what's my deploy URL?").
-
-## Env vars reference
-
-| Name | Scope | Where used |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | browser + server | both clients |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | browser + server | `getBrowserSupabase()`, anon fallback in `getServerSupabase()` |
-| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | `getServerSupabase()` — bypasses RLS for admin reads |
-| `SUPABASE_JWT_SECRET` | **server only** | used for custom JWT signing if you add per-team auth |
-
-Vercel auto-injects from the Vercel project env — VanderBot wrote them there
-during provisioning. Never put service-role or JWT secrets in `NEXT_PUBLIC_*`
-— those get bundled into the browser.
-
-## Ask VanderBot
-
-Whatever you're stuck on, WhatsApp the bot:
-
-- `"Supabase query returns nothing but the row exists"` — usually RLS
-- `"how do I add auth?"` — walks you through Supabase Auth setup
-- `"build failing on Vercel"` — check the deployment log, bot helps decode
-- `"how do I do X in Next.js?"` — general framework help
-
-## File tour
-
-```
-app/
-  layout.js         root layout + font + globals.css
-  page.js           home page with stack-status card
-  demo/
-    page.js         CRUD server component
-    form.js         client component (Server Action submit)
-  globals.css       Tailwind + CSS variables
-lib/
-  supabase-browser.js    createBrowserClient — client components only
-  supabase-server.js     createServerClient  — Server Components / Actions
-.env.local.example       template for your env (never commit .env.local)
-next.config.mjs          Next.js config (strict mode on)
-postcss.config.mjs       Tailwind v4 PostCSS plugin
-jsconfig.json            @/ path alias
-```
-
-## Troubleshooting
-
-**"Supabase env missing"** — you didn't create `.env.local`, or the values are empty. Copy from the example file.
-
-**"relation \"notes\" does not exist"** — run the SQL from step 3 above.
-
-**Build fails with `Cannot find module`** — run `npm install` again; Node 20+ required.
-
-**Auth redirect loop** — clear cookies, or your Supabase project's auth URLs don't include `localhost:3000` in Site URL settings.
+A containerized orchestration layer that decides, in real time, which compute tasks in a tactical defense workflow get offloaded to a quantum backend versus run classically. Built on top of the [sponsor starter](https://github.com/btedman-xtremis/xtremis-drydock) (`challenge-2-quantum/`), preserving its service architecture and `task_profile.csv` schema so judges' eval still works, while adding an LLM translation layer, a real-time animated UI, and two QAOA templates beyond the starter's MaxCut.
 
 ---
 
-Template: [thedatawell/template-nextjs-supabase](https://github.com/thedatawell/template-nextjs-supabase)
+## What it does
+
+A user enters a natural-language compute task (e.g. *"Find the optimal route for 4 drones across 4 targets"*) and the system:
+
+1. Classifies the task and extracts parameters into a row matching the sponsor's task profile schema
+2. Builds a parameterized QAOA circuit from a pre-validated template
+3. Verifies the circuit (gate validity, qubit count, depth, simulator sanity check, cost-benefit vs classical)
+4. Runs the sponsor's **5-gate decision engine** (Annex B): problem class → classification level → latency budget → instance size → backend availability
+5. Executes the chosen backend AND a classical baseline in parallel
+6. Streams every step to the UI as Server-Sent Events for live animation
+
+Three demo scenarios are wired:
+
+- **VRP** ("4 drones, 4 targets") — routes quantum, classical OR-tools wins on this small instance (the honest framing per Annex B)
+- **Frequency assignment** (5-cell graph coloring) — routes quantum, both find a valid 3-coloring
+- **SECRET task** — routes classical, hard-blocked at gate 2 (no commercial QPU at IL6)
+
+---
+
+## Architecture
+
+```
+┌──────────────┐    ┌──────────────────────┐    ┌────────────────────┐
+│  web (3000)  │───▶│  gateway (8003)      │───▶│  router (8000)     │
+│  Next.js 15  │SSE │  Gemini LLM          │    │  5-gate decision   │
+│  React 19    │◀───│  verifier            │    │  audit log         │
+└──────────────┘    │  CoT envelope        │    └─────────┬──────────┘
+                    └──────────────────────┘              │
+                                                ┌─────────┴─────────┐
+                                                ▼                   ▼
+                                  ┌──────────────────┐ ┌──────────────────┐
+                                  │ classical (8001) │ │ quantum (8002)   │
+                                  │ brute MaxCut     │ │ QAOA + Aer       │
+                                  │ OR-tools VRP     │ │ COBYLA optimizer │
+                                  │ DSATUR coloring  │ │ MaxCut/VRP/Freq  │
+                                  └──────────────────┘ └──────────────────┘
+```
+
+| Layer | Origin | Notes |
+|---|---|---|
+| `backend/docs/`, `backend/data/`, `backend/examples/` | sponsor | read-only |
+| `backend/src/router/` | sponsor, lightly extended | added `payload` field forwarding |
+| `backend/src/classical_backend/` | sponsor scaffold + our solvers | OR-tools VRP, networkx DSATUR coloring |
+| `backend/src/quantum_backend/` | sponsor scaffold + our templates | VRP-QAOA, freq-coloring QAOA, COBYLA-tuned MaxCut |
+| `backend/src/gateway/` | ours | LLM (Gemini, canned fallback), verifier, SSE, Cursor-on-Target XML |
+| `web/` | ours | Next.js 15 + R3F + Framer Motion; brass/walnut warm palette |
+
+---
+
+## The 5 routing gates (Annex B)
+
+A task is offloaded to quantum **only when all five gates pass**:
+
+1. **Problem class** — `quantum_candidate ∈ {Y, maybe}` from the task profile CSV
+2. **Classification level** — `UNCLASS` or `CUI` only; SECRET / TS-SCI is a hard block (no commercial QPU at IL6)
+3. **Latency budget** — `latency_budget_ms > estimated round-trip time`
+4. **Instance size** — within current QPU's feasible window (≤25 qubits gate-model)
+5. **Backend availability** — live `/health` ping; auto-fallback to classical on failure
+
+The classical baseline runs in parallel regardless. Both results are returned with full audit trail, in the spirit of "the orchestration layer's value is managing this transition intelligently, not pretending quantum is ready for everything."
+
+---
+
+## Run locally
+
+Requires Python 3.11+ and Node.js 20+. (Docker Compose unification pending.)
+
+```bash
+# Backend (4 services)
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+pip install ortools networkx google-genai sse-starlette httpx scipy
+
+export CLASSICAL_BACKEND_URL=http://localhost:8001
+export QUANTUM_BACKEND_URL=http://localhost:8002
+export ROUTER_URL=http://localhost:8000
+# optional: export GEMINI_API_KEY=...   (canned mappings used if missing)
+
+(cd src/classical_backend && python main.py &)
+(cd src/quantum_backend && python main.py &)
+(cd src/router && python main.py &)
+(cd src && python -m uvicorn gateway.api:app --host 0.0.0.0 --port 8003 &)
+
+# Web UI
+cd ../web
+npm install
+npm run dev
+```
+
+Open http://localhost:3000.
+
+Health checks:
+```bash
+for p in 8000 8001 8002 8003; do curl -s http://localhost:$p/health; echo; done
+```
+
+---
+
+## Tech stack
+
+**Backend:** Python 3.12, Qiskit 1.3 + Aer 0.15 (QAOA), FastAPI 0.136, Pydantic v2, OR-tools, scipy, networkx, google-genai (Gemini), sse-starlette.
+
+**Frontend:** Next.js 15 (App Router) + React 19, Tailwind CSS v4, Framer Motion, react-three-fiber + drei, Fraunces (serif) + JetBrains Mono (mono).
+
+**Inherited from sponsor:** the three-service Docker architecture, the 17-column `task_profile.csv` schema, the MaxCut QAOA reference, the Dockerfiles, and `docker-compose.yml`.
+
+---
+
+## Out of scope (deliberately)
+
+- Real QPU hardware (Aer simulator only; IBM Open Plan stretch)
+- Kubernetes (Docker Compose only, per Annex E recommendation)
+- LLM generating raw circuit code (LLM produces task profile rows; templates build circuits — reliability decision for live demo)
+- Production auth / multi-tenancy / closed-loop learning
+
+---
+
+## Sponsor
+
+Vanderbilt Dry Dock 2026 Build Week, Xtremis AI Challenge 2.
+Point of contact: B. Thomas Edman — `btedman@xtremis.ai`.
+Starter repo: https://github.com/btedman-xtremis/xtremis-drydock
+
+The annexes A–F (in `backend/docs/`) are the operative specs; this implementation conforms to them. See in particular Annex A (task profile schema), Annex B (5-gate decision rubric), Annex F (evaluation rubric: 35% tech / 25% venture / 15% present / 15% eng / 10% team).

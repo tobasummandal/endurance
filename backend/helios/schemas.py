@@ -111,3 +111,48 @@ class ErrorBody(BaseModel):
 
 class ErrorResponse(BaseModel):
     error: ErrorBody
+
+
+# ---- Live (interactive) audit ----
+
+class LiveAuditRequest(BaseModel):
+    filename: str = "draft.py"
+    source_code: str
+    session_token: str | None = None  # opaque client-supplied id for caching/cancel
+
+
+class LiveFinding(BaseModel):
+    category: IssueCategory
+    severity: IssueSeverity
+    line_start: int
+    line_end: int
+    title: str
+    explanation: str
+    source: IssueSource
+
+
+class LiveStaticResponse(BaseModel):
+    findings: list[LiveFinding]
+    elapsed_ms: float
+
+
+class LiveFixPreviewRequest(BaseModel):
+    filename: str = "draft.py"
+    source_code: str
+    finding: LiveFinding
+
+
+class LiveFixPreviewResponse(BaseModel):
+    fixed_code: str
+    diff_summary: str
+
+
+class LiveStatsResponse(BaseModel):
+    static_calls: int
+    stream_calls: int
+    fix_preview_calls: int
+    cache_hits: int
+    cache_misses: int
+    cancellations: int
+    rate_limited: int
+    active_tokens: int

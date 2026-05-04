@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import audit, fix, route, sessions, verify
+from .api import audit, fix, live, route, sessions, verify
 from .db import init_db
 from .errors import HeliosError, helios_error_handler
 
@@ -30,6 +30,7 @@ app.include_router(audit.router)
 app.include_router(fix.router)
 app.include_router(verify.router)
 app.include_router(route.router)
+app.include_router(live.router)
 
 
 @app.get("/health")

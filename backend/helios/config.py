@@ -16,5 +16,13 @@ class Settings(BaseSettings):
     max_file_lines: int = 4000
     test_case_count: int = 12
 
+    # Live audit
+    gemini_live_model: str = "gemini-2.5-flash"
+    live_max_file_lines: int = 1500
+    live_rate_capacity: int = 30          # tokens in bucket
+    live_rate_refill_per_s: float = 1.0   # tokens per second
+    live_cache_max_tokens: int = 256      # max distinct session tokens cached
+    live_cache_ttl_s: int = 1800          # idle session expiry
+
 
 settings = Settings()

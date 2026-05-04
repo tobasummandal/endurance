@@ -12,10 +12,26 @@ VALID_CATEGORIES = {
 VALID_SEVERITIES = {"low", "medium", "high", "critical"}
 
 
-def run_llm_audit(filename: str, source: str) -> list[dict]:
+def run_llm_audit(
+    filename: str,
+    source: str,
+    *,
+    model: str | None = None,
+    line_offset: int = 0,
+) -> list[dict]:
+    """Run a single LLM audit pass on `source`.
+
+    `line_offset` shifts reported line numbers (used when auditing a function
+    snippet — caller passes the function's start line minus 1).
+    """
     prompt = load_prompt("audit.v1.txt").format(filename=filename, source_code=source)
     try:
-        text = generate(settings.gemini_audit_model, prompt, json_mode=True, max_output_tokens=4096)
+        text = generate(
+            model or settings.gemini_audit_model,
+            prompt,
+            json_mode=True,
+            max_output_tokens=4096,
+        )
         raw = parse_json(text)
     except Exception:
         return []
@@ -38,8 +54,8 @@ def run_llm_audit(filename: str, source: str) -> list[dict]:
             le = int(item.get("line_end", ls))
         except (TypeError, ValueError):
             continue
-        ls = max(1, min(ls, line_count))
-        le = max(ls, min(le, line_count))
+        ls = max(1, min(ls, line_count)) + line_offset
+        le = max(ls, min(le + line_offset, line_count + line_offset))
         title = str(item.get("title", "")).strip()[:80]
         expl = str(item.get("explanation", "")).strip()
         if not title or not expl:

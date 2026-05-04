@@ -42,6 +42,33 @@ pytest
 | POST | `/sessions/{id}/route` | classify GPU candidates |
 | GET  | `/health` | health |
 
+### Live (interactive) audit
+
+Stateless endpoints meant for an editor — no DB writes, ephemeral per-token cache.
+Token is supplied via `X-Session-Token` header or `session_token` body field.
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/live/audit/static` | AST-only audit, sub-100ms, no LLM cost |
+| POST | `/live/audit/stream` | SSE stream: static event first, then LLM events |
+| POST | `/live/fix/preview`  | stateless fix gen for an ephemeral finding |
+| GET  | `/live/stats`        | telemetry counters |
+
+SSE event types from `/live/audit/stream`:
+- `hello` — connection acknowledged
+- `static` — array of AST findings (immediate)
+- `cache_hit` — whole-file hash matched, no LLM call
+- `llm_partial` — findings for a subset of functions (per-function audit)
+- `llm` — consolidated LLM findings
+- `merged` — `merge_dedupe(static, llm)`, sorted by severity
+- `done` — stream complete
+- `error` — `cancelled` / `client_disconnect`
+
+Live mode uses `gemini-2.5-flash` by default and an AST-hash cache so only
+edited functions get re-audited. A new stream request with the same token
+cancels any prior in-flight stream. Per-token rate limit (default 30 burst,
+1/s refill, configurable via `LIVE_RATE_*` env vars).
+
 ## Threat model (sandbox)
 
 User code is run in a child Python process with `RLIMIT_AS`, `RLIMIT_CPU`,

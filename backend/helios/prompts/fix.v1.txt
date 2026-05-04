@@ -1,0 +1,19 @@
+You are rewriting a single Python source file to apply ONE specific fix. Do not refactor, rename, reformat, or change anything else. Preserve all comments, docstrings, imports, and unrelated code exactly.
+
+THE ISSUE TO FIX:
+  category: {category}
+  lines: {line_start}-{line_end}
+  title: {title}
+  explanation: {explanation}
+
+Return strict JSON with exactly two keys:
+  "fixed_code"    — the FULL contents of the file after applying ONLY this fix
+  "diff_summary"  — one short sentence describing the change you made
+
+Return ONLY the JSON object. No prose, no markdown fence.
+
+ORIGINAL FILE: {filename}
+
+```python
+{source_code}
+```

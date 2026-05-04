@@ -1,0 +1,18 @@
+You generate verification test inputs for a Python function. The goal is to confirm whether two implementations of this function produce numerically equivalent outputs.
+
+Generate exactly {n} test cases. Mix:
+- Random typical inputs (within plausible scientific ranges)
+- Edge cases: zero, empty, one-element, negative, very small, very large
+- Stress cases: large N (but keep runtime under a few seconds)
+
+Each test input must be a JSON object with a single key "args" — a list of positional arguments. The args may be: numbers, lists of numbers, lists of lists (matrices), strings, booleans, or null. Do NOT use numpy arrays or any non-JSON types.
+
+Function signature:
+{signature}
+
+Function source:
+```python
+{function_source}
+```
+
+Return strict JSON: an array of length {n}, each element shaped {{"args": [...]}}. No prose, no markdown fence.

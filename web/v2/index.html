@@ -13,7 +13,8 @@
       --bg: #07090d;
       --bg-1: #0c1118;
       --fg: #f3ece0;
-      --dim: #6e7787;
+      --dim: #8a93a3;       /* WCAG AA on --bg: ~6.4:1 */
+      --dim-low: #6e7787;   /* decorative only, never load-bearing prose */
       --line: #1a2230;
       --sun: #E8A33D;
       --sun-warm: #f4c46b;
@@ -22,6 +23,34 @@
       --quantum: #c08aff;
       --mono: 'JetBrains Mono', ui-monospace, monospace;
       --serif: 'Fraunces', Georgia, serif;
+      --prose: 'Fraunces', Georgia, serif;
+    }
+
+    /* keyboard-only focus rings — necessary because we hide the OS cursor */
+    :focus { outline: none; }
+    :focus-visible {
+      outline: 2px solid var(--sun);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+    button:focus-visible, .wk-choice:focus-visible, .wk-ex:focus-visible, .stage-pill:focus-visible {
+      outline: 2px solid var(--sun);
+      outline-offset: 4px;
+    }
+
+    /* respect users who asked for less motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+      canvas#bg { display: none; }
+      body { background:
+        radial-gradient(ellipse at 50% -20%, rgba(232,163,61,0.18), transparent 60%),
+        var(--bg);
+      }
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
@@ -81,7 +110,7 @@
     .demo-wrap {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 5.5rem 5vw 2rem;
+      padding: 4rem 5vw 1rem;
     }
     .stage-bar {
       display: grid;
@@ -130,7 +159,7 @@
       border: 1px solid var(--line);
       background: rgba(7,9,13,0.7);
       backdrop-filter: blur(8px);
-      min-height: 540px;
+      height: 460px;
     }
     .pane { display: flex; flex-direction: column; min-width: 0; }
     .pane-head {
@@ -190,7 +219,6 @@
 
     .results {
       background: rgba(12,17,24,0.4);
-      max-height: 540px;
       overflow-y: auto;
     }
     .results .pane-head .narration {
@@ -322,7 +350,7 @@
     .cta-section {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 3rem 5vw 1.5rem;
+      padding: 1.5rem 5vw 1.5rem;
       display: flex;
       flex-wrap: wrap;
       gap: 1.5rem 2rem;
@@ -627,19 +655,692 @@
     }
     .step-item .key { color: var(--sun); }
 
+    /* ---- mega highlight for Start button after demo ---- */
+    .start-cta-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .start-cta-arrow {
+      position: absolute;
+      left: calc(100% + 1.25rem);
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 17px;
+      color: var(--sun);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity .6s;
+      pointer-events: none;
+      letter-spacing: 0.01em;
+    }
+    .start-cta-arrow::before {
+      content: '←';
+      margin-right: .6ch;
+      font-style: normal;
+      font-weight: 600;
+      display: inline-block;
+      animation: pointHorizontal 1.2s ease-in-out infinite;
+    }
+    @keyframes pointHorizontal {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(-8px); }
+    }
+    .start-cta-arrow.show { opacity: 1; }
+
+    .start-btn.mega-pulse {
+      font-size: 17px;
+      letter-spacing: 0.3em;
+      padding: 1.4rem 2.5rem;
+      animation: megaPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes megaPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(232,163,61,0.8), 0 0 50px rgba(232,163,61,0.45);
+      }
+      50% {
+        transform: scale(1.06);
+        box-shadow: 0 0 0 28px rgba(232,163,61,0), 0 0 70px rgba(232,163,61,0.7);
+      }
+    }
+
+    /* ---- walkthrough ---- */
+    .walkthrough {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 5vw;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .8s ease, padding .6s ease;
+    }
+    .walkthrough.open {
+      max-height: 5000px;
+      padding: 4rem 5vw 2rem;
+      border-top: 1px solid var(--line);
+    }
+    .wk-header { margin-bottom: 2.25rem; }
+    .wk-header h2 {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(36px, 5vw, 64px);
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      margin-bottom: 1rem;
+    }
+    .wk-header h2 em { font-style: italic; color: var(--sun); }
+    .wk-header p {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--dim);
+      line-height: 1.7;
+      max-width: 660px;
+    }
+
+    .wk-progress {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      margin-bottom: 2rem;
+    }
+    .wk-progress-step {
+      background: var(--bg);
+      padding: 1rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .9ch;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--dim);
+      transition: color .3s, background .3s;
+    }
+    .wk-progress-step .wk-pn {
+      font-family: var(--serif);
+      font-size: 24px;
+      font-weight: 500;
+      font-style: italic;
+      color: var(--line);
+      letter-spacing: -0.04em;
+      transition: color .3s;
+    }
+    .wk-progress-step.active {
+      color: var(--fg);
+      background: rgba(232,163,61,0.08);
+    }
+    .wk-progress-step.active .wk-pn { color: var(--sun); }
+    .wk-progress-step.done { color: var(--fg); }
+    .wk-progress-step.done .wk-pn { color: var(--right); }
+
+    .wk-panel {
+      display: none;
+      animation: panelIn .35s ease both;
+    }
+    .wk-panel.active { display: block; }
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .wk-panel > h3 {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(24px, 3vw, 36px);
+      letter-spacing: -0.02em;
+      margin-bottom: .75rem;
+    }
+    .wk-panel > h3 em { font-style: italic; color: var(--sun); }
+    .wk-panel > p {
+      font-family: var(--mono);
+      font-size: 14.5px;
+      color: var(--dim);
+      line-height: 1.7;
+      margin-bottom: 1.75rem;
+      max-width: 640px;
+    }
+
+    .wk-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    .wk-choice {
+      border: 1px solid var(--line);
+      background: rgba(7,9,13,0.7);
+      padding: 1.75rem;
+      cursor: none;
+      transition: border-color .25s, background .25s, transform .15s;
+      text-align: left;
+      font-family: inherit;
+    }
+    .wk-choice:hover {
+      border-color: var(--sun);
+      background: rgba(232,163,61,0.05);
+      transform: translateY(-2px);
+    }
+    .wk-choice .wk-choice-letter {
+      font-family: var(--serif);
+      font-size: 56px;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--sun);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 1rem;
+      opacity: .75;
+    }
+    .wk-choice h4 {
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--fg);
+      font-weight: 600;
+      margin-bottom: .65rem;
+    }
+    .wk-choice p {
+      font-family: var(--mono);
+      font-size: 13.5px;
+      color: var(--dim);
+      line-height: 1.7;
+    }
+
+    .wk-ex-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .wk-ex-stack {
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+    }
+    .wk-ex-stack .wk-ex {
+      width: 100%;
+    }
+    .wk-step1-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 2rem;
+      align-items: stretch;
+    }
+    .wk-step1-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .wk-step1-col textarea {
+      height: 220px;
+    }
+    .wk-step1-divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 0 .5rem;
+    }
+    .wk-step1-divider::before,
+    .wk-step1-divider::after {
+      content: '';
+      flex: 1;
+      width: 1px;
+      background: var(--line);
+    }
+    .wk-step1-divider span {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 17px;
+      color: var(--dim);
+      padding: .75rem 0;
+    }
+    .wk-col-label {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--fg);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .9ch;
+      font-weight: 500;
+    }
+    .wk-col-letter {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 300;
+      font-size: 28px;
+      color: var(--sun);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .wk-step1-blurb {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--dim);
+      line-height: 1.65;
+      margin-bottom: 1rem;
+    }
+    .wk-ex {
+      background: rgba(7,9,13,0.7);
+      border: 1px solid var(--line);
+      padding: 1.5rem 1.25rem;
+      cursor: none;
+      text-align: left;
+      transition: border-color .2s, background .2s, transform .15s;
+      font-family: var(--mono);
+    }
+    .wk-ex:hover {
+      border-color: var(--sun);
+      background: rgba(232,163,61,0.05);
+      transform: translateY(-2px);
+    }
+    .wk-ex .wk-ex-name {
+      font-size: 15px;
+      color: var(--sun);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-bottom: .5rem;
+    }
+    .wk-ex .wk-ex-bug {
+      font-size: 13px;
+      color: var(--dim);
+      line-height: 1.6;
+    }
+
+    .wk-paste-pane textarea {
+      width: 100%;
+      height: 240px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--line);
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      cursor: none;
+      margin-top: .75rem;
+    }
+    .wk-paste-pane textarea:focus { outline: none; border-color: var(--sun); }
+
+    .wk-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--line);
+      background: rgba(7,9,13,0.7);
+      min-height: 480px;
+      margin-bottom: 1.5rem;
+    }
+    .wk-demo .editor { border-right: 1px solid var(--line); }
+    .wk-demo .pane-head .filename { color: var(--fg); display: flex; align-items: center; gap: 1ch; }
+    .wk-demo .pane-head .filename::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--sun);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--sun);
+    }
+    .wk-demo .results { background: rgba(12,17,24,0.4); max-height: 540px; overflow-y: auto; }
+    .wk-demo .narration {
+      color: var(--fg);
+      text-transform: none;
+      letter-spacing: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 15px;
+      transition: opacity .3s;
+      flex: 1;
+    }
+
+    .wk-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+    }
+    .wk-btn {
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--sun);
+      padding: 1rem 1.75rem;
+      border: none;
+      cursor: none;
+      font-weight: 600;
+      transition: background .2s, transform .15s;
+    }
+    .wk-btn:hover { background: var(--sun-warm); transform: translateY(-2px); }
+    .wk-btn:disabled { opacity: .35; transform: none; }
+    .wk-btn-mega {
+      font-size: 16px;
+      padding: 1.25rem 2.5rem;
+      letter-spacing: 0.28em;
+      animation: megaBtn 1.6s ease-in-out infinite;
+    }
+    @keyframes megaBtn {
+      0%, 100% { box-shadow: 0 0 30px rgba(232,163,61,0.3); }
+      50% { box-shadow: 0 0 55px rgba(232,163,61,0.6); }
+    }
+    .wk-btn-secondary {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--dim);
+      padding: 1rem 1.5rem;
+      cursor: none;
+      transition: border-color .2s, color .2s;
+    }
+    .wk-btn-secondary:hover { border-color: var(--sun); color: var(--sun); }
+    .wk-hint {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--dim);
+      letter-spacing: 0.05em;
+    }
+    .wk-hint strong { color: var(--sun); font-weight: 600; }
+
+    /* ---- vision section: BIG ---- */
+    .vision {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 8rem 5vw 5rem;
+      border-top: 1px solid var(--line);
+    }
+    .vision-eyebrow {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--sun);
+      margin-bottom: 2.5rem;
+      font-weight: 500;
+    }
+    .vision h2.vision-headline {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(48px, 9vw, 130px);
+      line-height: 0.96;
+      letter-spacing: -0.035em;
+      color: var(--fg);
+      margin-bottom: 2rem;
+    }
+    .vision h2.vision-headline em { font-style: italic; color: var(--sun); }
+    .vision-sub {
+      font-family: var(--mono);
+      font-size: clamp(16px, 1.5vw, 22px);
+      line-height: 1.55;
+      color: var(--dim);
+      max-width: 760px;
+      margin-bottom: 6rem;
+      font-weight: 300;
+    }
+    .vision-sub strong { color: var(--fg); font-weight: 500; }
+
+    .vision-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      margin-bottom: 7rem;
+    }
+    .vision-stat {
+      background: var(--bg);
+      padding: 3rem 2rem;
+    }
+    .vision-stat .stat-num {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(48px, 6.5vw, 96px);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: var(--sun);
+      margin-bottom: 1rem;
+    }
+    .vision-stat .stat-label {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--dim);
+      letter-spacing: 0.06em;
+      line-height: 1.55;
+    }
+
+    .vision-claim {
+      margin-bottom: 5.5rem;
+    }
+    .vision-claim .claim-num {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      letter-spacing: 0.4em;
+      color: var(--sun);
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+    .vision-claim h3 {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(32px, 5vw, 72px);
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+      color: var(--fg);
+      margin-bottom: 1.5rem;
+      max-width: 1100px;
+    }
+    .vision-claim h3 .hl {
+      background: linear-gradient(180deg, transparent 62%, rgba(232,163,61,0.4) 62%);
+      font-style: italic;
+      color: var(--sun);
+      padding: 0 .15em;
+    }
+    .vision-claim h3 .hl-q {
+      background: linear-gradient(180deg, transparent 62%, rgba(192,138,255,0.4) 62%);
+      font-style: italic;
+      color: var(--quantum);
+      padding: 0 .15em;
+    }
+    .vision-claim p {
+      font-family: var(--mono);
+      font-size: clamp(14px, 1.3vw, 18px);
+      line-height: 1.75;
+      color: var(--dim);
+      max-width: 720px;
+      font-weight: 300;
+    }
+
+    .vision-closing {
+      border-top: 1px solid var(--line);
+      padding-top: 5rem;
+      margin-top: 3rem;
+    }
+    .vision-closing p {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(28px, 4vw, 56px);
+      line-height: 1.25;
+      letter-spacing: -0.015em;
+      color: var(--fg);
+      max-width: 1100px;
+    }
+    .vision-closing p .key { color: var(--sun); }
+    .vision-closing p .key-q { color: var(--quantum); }
+    .vision-closing .signature {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-top: 3rem;
+    }
+
+    /* prose family — serif for reading speed, mono kept for code-like text */
+    .info-col p,
+    .vision-sub,
+    .vision-claim p,
+    .vision-stat .stat-label,
+    .wk-step1-blurb,
+    .wk-ex-bug,
+    .step-item p,
+    .wk-panel > p,
+    .wk-header p,
+    .wk-choice p {
+      font-family: var(--prose);
+      font-weight: 300;
+      letter-spacing: 0.005em;
+    }
+    .vision-sub { font-weight: 300; }
+    .vision-claim p { font-size: clamp(16px, 1.4vw, 20px); line-height: 1.6; }
+    .info-col p { font-size: 16px; line-height: 1.65; opacity: 1; color: var(--fg); }
+    .info-col p + p { color: var(--dim); }
+    .step-item p { font-size: 14.5px; line-height: 1.65; }
+    .wk-ex-bug { font-size: 14px; line-height: 1.55; }
+
+    /* curvy "need an example?" hint inside the paste column */
+    .wk-curvy-hint {
+      position: relative;
+      margin-top: .9rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      color: var(--sun);
+      pointer-events: none;
+    }
+    .wk-curvy-text {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 17px;
+      letter-spacing: 0.005em;
+      color: var(--sun);
+      white-space: nowrap;
+    }
+    .wk-curvy-text strong {
+      font-weight: 500;
+      color: var(--sun-warm);
+    }
+    .wk-curvy-arrow {
+      width: 110px;
+      height: 60px;
+      flex-shrink: 0;
+      color: var(--sun);
+      animation: curvyBob 2.4s ease-in-out infinite;
+    }
+    @keyframes curvyBob {
+      0%, 100% { transform: translateX(0) translateY(0); }
+      50% { transform: translateX(6px) translateY(-3px); }
+    }
+
+    /* demo replay button + example switcher */
+    .replay-btn {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: .35rem .7rem;
+      cursor: none;
+      margin-left: .75rem;
+      transition: border-color .2s, color .2s;
+      flex-shrink: 0;
+    }
+    .replay-btn:hover { border-color: var(--sun); color: var(--sun); }
+
+    .wk-ex-switcher {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .75rem;
+      flex-wrap: wrap;
+    }
+    .wk-ex-switcher .label {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-right: .25rem;
+    }
+    .wk-ex-pill {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: .35rem .65rem;
+      cursor: none;
+      transition: border-color .15s, color .15s, background .15s;
+      letter-spacing: 0.02em;
+    }
+    .wk-ex-pill:hover { border-color: var(--sun); color: var(--sun); }
+    .wk-ex-pill.active {
+      border-color: var(--sun);
+      color: var(--sun);
+      background: rgba(232,163,61,0.06);
+    }
+
+    /* inline error block (replaces alert) */
+    .wk-inline-error {
+      margin-top: 1rem;
+      padding: 1rem 1.1rem;
+      background: rgba(233,79,55,0.08);
+      border-left: 2px solid var(--wrong);
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--fg);
+      line-height: 1.65;
+    }
+    .wk-inline-error strong { color: var(--wrong); display: block; margin-bottom: .35rem; letter-spacing: 0.1em; text-transform: uppercase; font-size: 11.5px; }
+    .wk-inline-error a { color: var(--sun); text-decoration: underline; cursor: none; }
+
+    /* mix-blend-mode fallback for Safari < 17 */
+    @supports not (mix-blend-mode: difference) {
+      .header { mix-blend-mode: normal; color: var(--fg); }
+      .cursor-ring, .cursor-dot { mix-blend-mode: normal; }
+    }
+
+    /* soften inactive step indicator pre-start so step 1 feels "current" */
+    .wk-progress-step:not(.active):not(.done) { opacity: .55; }
+    .wk-progress-step.active { opacity: 1; }
+
+    /* drop zone state feedback */
+    .drop-zone.over[data-state="ok"] { border-color: var(--right); color: var(--right); background: rgba(127,224,224,0.05); }
+    .drop-zone.over[data-state="reject"] { border-color: var(--wrong); color: var(--wrong); background: rgba(233,79,55,0.05); }
+
     @media (max-width: 900px) {
-      .demo, .try-grid, .info { grid-template-columns: 1fr; }
-      .editor { border-right: none; border-bottom: 1px solid var(--line); }
+      .demo, .try-grid, .info, .wk-demo, .wk-choices, .wk-ex-grid, .vision-stats, .wk-step1-grid { grid-template-columns: 1fr; }
+      .wk-curvy-hint { display: none; }
+      .wk-step1-divider { padding: 1rem 0; }
+      .wk-step1-divider::before, .wk-step1-divider::after { width: auto; height: 1px; }
+      .editor, .wk-demo .editor { border-right: none; border-bottom: 1px solid var(--line); }
       .stage-bar { grid-template-columns: repeat(2, 1fr); }
       .header .slogan { display: none; }
       .step-list { grid-template-columns: 1fr; }
       .step-item { border-left: none; border-top: 1px solid var(--line); }
       .step-item:first-child { border-top: none; }
       .cta-section { flex-direction: column; align-items: stretch; padding: 2rem 5vw 1.5rem; }
+      .start-cta-wrap { flex-direction: column; gap: .75rem; align-items: center; width: 100%; }
+      .start-cta-arrow { position: static; transform: none; left: auto; margin-top: .25rem; }
+      .start-cta-arrow::before { animation: none; }
       .start-btn { width: 100%; justify-content: center; padding: 1rem 1rem; font-size: 12px; letter-spacing: 0.18em; }
+      .start-btn.mega-pulse { font-size: 14px; padding: 1.2rem 1rem; }
       .waitlist { justify-content: stretch; }
       .waitlist .label { display: none; }
       .waitlist input { flex: 1; min-width: 0; }
+      .wk-progress { grid-template-columns: 1fr 1fr; }
+      .wk-progress-step { font-size: 11px; letter-spacing: 0.18em; }
     }
   </style>
 </head>
@@ -677,63 +1378,124 @@
           <div class="pane-head">
             <span class="narration" id="narration">Walking through three real scientific bugs.</span>
             <span class="ex-counter" id="counter">1 / 3</span>
+            <button class="replay-btn" id="replayBtn" title="Replay the auto-demo">↻ replay</button>
           </div>
           <div id="results"></div>
         </div>
       </div>
     </section>
 
-    <!-- CTA -->
-    <section class="cta-section">
-      <button class="start-btn" id="startBtn">▶ Start now</button>
-      <div class="waitlist">
-        <span class="label">Waitlist for hosted Helios:</span>
-        <input id="email" type="email" placeholder="you@lab.edu" />
-        <button id="emailBtn">Join</button>
-        <span class="ack" id="ack">✓ saved</span>
+    <!-- CTA — single primary action, no competing affordances -->
+    <section class="cta-section" style="justify-content: center;">
+      <div class="start-cta-wrap">
+        <button class="start-btn" id="startBtn">▶ Start now</button>
+        <span class="start-cta-arrow" id="startCtaArrow">click to walk through it yourself</span>
       </div>
     </section>
 
-    <!-- TRY YOUR OWN + INSTALL (collapsed by default, opened by Start) -->
-    <section class="try-section" id="trySection">
-      <div class="try-grid">
-        <div class="try-pane">
-          <h3>Try your own code</h3>
-          <div class="drop-zone" id="dropZone">
-            ↑ Drop a .py file <span class="or">or</span> paste below
-            <input type="file" id="fileInput" accept=".py,text/x-python" style="display:none" />
-          </div>
-          <textarea id="userCode" spellcheck="false" placeholder="def integrate(f_values, dx):
+    <!-- WALKTHROUGH (opened by Start) -->
+    <section class="walkthrough" id="walkthrough">
+      <div class="wk-header">
+        <h2>Your turn. <em>Walk it through.</em></h2>
+        <p>Five steps. <strong style="color:var(--fg)">You</strong> control the pace — click <strong style="color:var(--sun)">next</strong> when you're ready to advance. Bring your own Python, or see how Helios handles a real bug.</p>
+      </div>
+
+      <div class="wk-progress" id="wkProgress">
+        <div class="wk-progress-step active" data-prog="1"><span class="wk-pn">1</span><span>Choose</span></div>
+        <div class="wk-progress-step" data-prog="2"><span class="wk-pn">2</span><span>Audit</span></div>
+        <div class="wk-progress-step" data-prog="3"><span class="wk-pn">3</span><span>Fix</span></div>
+        <div class="wk-progress-step" data-prog="4"><span class="wk-pn">4</span><span>Verify</span></div>
+        <div class="wk-progress-step" data-prog="5"><span class="wk-pn">5</span><span>Route</span></div>
+      </div>
+
+      <!-- Step 1: combined paste + examples (always visible side-by-side) -->
+      <div class="wk-panel active wk-paste-pane" data-panel="step1">
+        <h3>Step 1 — <em>choose your code</em></h3>
+        <p>Paste your own Python, or pick one of our three example bugs. Switch any time — both are right here.</p>
+
+        <div class="wk-step1-grid">
+          <!-- Paste column -->
+          <div class="wk-step1-col">
+            <div class="wk-col-label"><span class="wk-col-letter">A</span> Paste your own</div>
+            <div class="drop-zone" id="wkDropZone">
+              ↑ Drop a .py file <span class="or">or</span> paste below
+              <input type="file" id="wkFileInput" accept=".py,text/x-python" style="display:none" />
+            </div>
+            <textarea id="wkUserCode" spellcheck="false" placeholder="def integrate(f_values, dx):
     n = len(f_values)
     total = 0.0
     for i in range(1, n - 1):
         total += 0.5 * (f_values[i] + f_values[i+1]) * dx
     return total"></textarea>
-          <div class="try-actions">
-            <button class="try-btn" id="auditBtn">▶ Quick audit</button>
-            <button class="try-btn-secondary" id="fullPipelineBtn">▶▶ Run full pipeline</button>
-            <span class="try-status" id="tryStatus">idle</span>
+            <div class="wk-actions">
+              <button class="wk-btn wk-btn-mega" id="wkRunPipeline">▶ Run full pipeline</button>
+            </div>
+            <p class="wk-hint" style="margin-top:.5rem;">Opens the reviewer with all four steps.</p>
+            <div class="wk-curvy-hint" aria-hidden="true">
+              <span class="wk-curvy-text">no code yet? <strong>try one →</strong></span>
+              <svg class="wk-curvy-arrow" viewBox="0 0 110 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <marker id="wk-arrowhead" viewBox="0 0 10 10" markerWidth="8" markerHeight="8" refX="6" refY="5" orient="auto">
+                    <path d="M0,0 L8,5 L0,10 z" fill="currentColor"/>
+                  </marker>
+                </defs>
+                <path d="M 5 50 Q 50 6, 100 30" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" marker-end="url(#wk-arrowhead)"/>
+              </svg>
+            </div>
           </div>
-          <div class="try-results" id="tryResults" style="margin-top: 1rem;">
-            <div class="empty">Quick audit runs static checks inline. Full pipeline opens the reviewer with audit, fix, verify &amp; route.</div>
+
+          <!-- Vertical divider with "or" -->
+          <div class="wk-step1-divider"><span>or</span></div>
+
+          <!-- Examples column -->
+          <div class="wk-step1-col">
+            <div class="wk-col-label"><span class="wk-col-letter">B</span> See an example</div>
+            <p class="wk-step1-blurb">Three real silent bugs. Each looks correct and produces wrong numbers. You'll walk through them stage-by-stage.</p>
+            <div class="wk-ex-stack">
+              <button class="wk-ex" data-ex="0">
+                <div class="wk-ex-name">integrate.py</div>
+                <div class="wk-ex-bug">off-by-one in trapezoidal rule — silently drops one interval</div>
+              </button>
+              <button class="wk-ex" data-ex="1">
+                <div class="wk-ex-name">simulate.py</div>
+                <div class="wk-ex-bug">mutable default argument — state leaks between calls</div>
+              </button>
+              <button class="wk-ex" data-ex="2">
+                <div class="wk-ex-name">converged.py</div>
+                <div class="wk-ex-bug">float equality in convergence — never converges, or by accident</div>
+              </button>
+            </div>
           </div>
         </div>
-        <div class="try-pane">
-          <h3>Install the MCP server</h3>
-          <p style="font-size:14px;color:var(--dim);line-height:1.7;margin-bottom:.5rem;">Run helios locally inside Claude, Cursor, or any MCP-compatible agent.</p>
-          <div class="install">
-            <span class="copy" id="cp1">copy</span>
-            <code>pip install "helios[mcp]" &amp;&amp; helios-mcp</code>
+      </div>
+
+      <!-- Walkthrough demo (steps 2-5) -->
+      <div class="wk-panel" data-panel="demo">
+        <div class="wk-ex-switcher" id="wkExSwitcher">
+          <span class="label">switch example:</span>
+          <button class="wk-ex-pill" data-swex="0">integrate.py</button>
+          <button class="wk-ex-pill" data-swex="1">simulate.py</button>
+          <button class="wk-ex-pill" data-swex="2">converged.py</button>
+        </div>
+        <div class="wk-demo">
+          <div class="pane editor">
+            <div class="pane-head">
+              <span class="filename" id="wkFilename">example.py</span>
+              <span>Python · scientific</span>
+            </div>
+            <div class="editor-body" id="wkEditor"></div>
           </div>
-          <p style="font-size:13px;color:var(--dim);line-height:1.7;margin:.75rem 0 .35rem;">Then add to <code style="color:var(--fg);">~/Library/Application Support/Claude/claude_desktop_config.json</code>:</p>
-          <div class="install">
-            <span class="copy" id="cp2">copy</span><code>{
-  "mcpServers": {
-    "helios": { "command": "helios-mcp" }
-  }
-}</code>
+          <div class="pane results">
+            <div class="pane-head">
+              <span class="narration" id="wkNarration">Click <strong style="color:var(--sun)">Run audit</strong> below to begin.</span>
+            </div>
+            <div id="wkResults"></div>
           </div>
-          <p class="small">Once installed, any agent generating scientific Python will route through helios for audit, fix, verify, and quantum/GPU routing before shipping code.</p>
+        </div>
+        <div class="wk-actions">
+          <button class="wk-btn-secondary" id="wkRestart">← Back to step 1</button>
+          <button class="wk-btn wk-btn-mega" id="wkNext">▶ Run audit</button>
+          <span class="wk-hint" id="wkHint">step <strong>2</strong> of 5 — audit</span>
         </div>
       </div>
     </section>
@@ -789,6 +1551,55 @@
       </div>
     </section>
 
+    <!-- VISION — the wider claim -->
+    <section class="vision">
+      <div class="vision-eyebrow">The wider vision</div>
+      <h2 class="vision-headline">AI <em>co-investigators</em><br/>for scientific compute.</h2>
+      <p class="vision-sub"><strong>Open-source. University-partnered.</strong> Built so the code doesn't break — because in numerical science, code that looks right and is wrong is the most expensive bug there is.</p>
+
+      <div class="vision-stats">
+        <div class="vision-stat">
+          <div class="stat-num">$3.4B+</div>
+          <div class="stat-label">U.S. quantum &amp; exascale spend since 2019. Hardware sits underused.</div>
+        </div>
+        <div class="vision-stat">
+          <div class="stat-num">&lt;5%</div>
+          <div class="stat-label">Researchers who can write performant code for novel hardware.</div>
+        </div>
+        <div class="vision-stat">
+          <div class="stat-num">6–18mo</div>
+          <div class="stat-label">From research question to first result. Most of that delay is plumbing, not science.</div>
+        </div>
+      </div>
+
+      <div class="vision-claim">
+        <div class="claim-num">01 · The bug</div>
+        <h3>AI without scientists in the loop produces code that <span class="hl">looks right and is wrong</span>.</h3>
+        <p>LLMs run on correlation, not understanding. Hallucinated unit conversions, off-by-one discretizations, broken boundary conditions — bugs that don't crash, don't fail tests, and don't get caught until the paper is already in review.</p>
+      </div>
+
+      <div class="vision-claim">
+        <div class="claim-num">02 · The frontier</div>
+        <h3>The next breakthrough lives at the <span class="hl-q">classical–quantum boundary</span>.</h3>
+        <p>Most workloads stay classical. The ones that benefit from quantum amplitude estimation, QAOA, or HHL — you need to know which. Helios decides at the function level: CPU, GPU, or quantum.</p>
+      </div>
+
+      <div class="vision-closing">
+        <p>Ineffable raised $1.1B betting AI <span class="key-q">replaces</span> scientists.<br/>We're betting it <span class="key">pairs</span> with them —<br/>because the code <span class="key">breaks</span> when it doesn't.</p>
+        <div class="signature">HELIOS · scientific compute, with humans still in the loop</div>
+      </div>
+    </section>
+
+    <!-- Waitlist — moved out of CTA so it doesn't compete with Start now -->
+    <section class="cta-section" style="border-top: 1px solid var(--line); padding-top: 3rem;">
+      <div class="waitlist" style="margin: 0 auto;">
+        <span class="label">Waitlist for hosted Helios:</span>
+        <input id="email" type="email" placeholder="you@lab.edu" />
+        <button id="emailBtn">Join</button>
+        <span class="ack" id="ack">✓ saved</span>
+      </div>
+    </section>
+
     <footer>
       <span>HELIOS · v0.1</span>
       <span>quantum-aware optimizer for scientific code</span>
@@ -796,6 +1607,9 @@
   </main>
 
   <script>
+    // ============= reduced-motion =============
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     // ============= background =============
     const bg = document.getElementById('bg'); const ctx = bg.getContext('2d');
     let W = 0, H = 0; const DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -863,9 +1677,9 @@
         ctx.fillStyle = 'rgba(243,236,224,0.55)';
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
       }
-      requestAnimationFrame(draw);
+      if (!reduceMotion) requestAnimationFrame(draw);
     }
-    draw();
+    if (reduceMotion) { mxs = W/2; mys = H/2; draw(); } else { draw(); }
 
     // ============= cursor =============
     const ring = document.getElementById('ring'), dot = document.getElementById('dot');
@@ -876,7 +1690,15 @@
       ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
       requestAnimationFrame(follow);
     }
-    follow();
+    if (reduceMotion) {
+      // snap mode — no easing
+      document.addEventListener('mousemove', e => {
+        ring.style.left = e.clientX + 'px';
+        ring.style.top = e.clientY + 'px';
+      });
+    } else {
+      follow();
+    }
     function bindHover() {
       document.querySelectorAll('button, input, textarea, .copy, .stage-pill, .route-card, .try-pane').forEach(el => {
         el.addEventListener('mouseenter', () => ring.classList.add('hot'));
@@ -1148,24 +1970,40 @@
           await sleep(1100);
         }
       }
-      // After all done — invite to try own
-      setNarration('Your turn. Drop or paste your own scientific Python.');
+      // After all done — STRONGLY highlight Start to launch the walkthrough
+      setNarration('↓ click Start now to walk through it yourself.');
       const startBtn = document.getElementById('startBtn');
-      startBtn.classList.add('pulse');
+      startBtn.classList.add('mega-pulse');
+      const arrow = document.getElementById('startCtaArrow');
+      if (arrow) arrow.classList.add('show');
       startBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     setTimeout(runAllExamples, 900);
 
+    // ============= replay button =============
+    document.getElementById('replayBtn').addEventListener('click', () => {
+      // clean post-demo highlight state, then re-run
+      const startBtn = document.getElementById('startBtn');
+      startBtn.classList.remove('mega-pulse', 'pulse');
+      const arrow = document.getElementById('startCtaArrow');
+      if (arrow) arrow.classList.remove('show');
+      // scroll demo back into view, then run
+      document.querySelector('.demo-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      runAllExamples();
+    });
+
     // ============= Start now CTA =============
     document.getElementById('startBtn').addEventListener('click', () => {
-      const trySection = document.getElementById('trySection');
-      trySection.classList.add('open');
-      document.getElementById('startBtn').classList.remove('pulse');
+      const wkSection = document.getElementById('walkthrough');
+      wkSection.classList.add('open');
+      const startBtn = document.getElementById('startBtn');
+      startBtn.classList.remove('pulse', 'mega-pulse');
+      const arrow = document.getElementById('startCtaArrow');
+      if (arrow) arrow.classList.remove('show');
       bindHover();
       setTimeout(() => {
-        document.getElementById('userCode').focus();
-        trySection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        wkSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 200);
     });
 
@@ -1183,117 +2021,267 @@
       setTimeout(() => document.getElementById('ack').classList.remove('in'), 3000);
     });
 
-    // ============= try-your-own =============
-    const auditBtn = document.getElementById('auditBtn');
-    const tryStatus = document.getElementById('tryStatus');
-    const tryResults = document.getElementById('tryResults');
-    auditBtn.addEventListener('click', async () => {
-      const code = document.getElementById('userCode').value.trim();
-      if (!code) {
-        tryResults.innerHTML = '<div class="empty">Paste some Python first.</div>';
-        return;
-      }
-      auditBtn.disabled = true;
-      tryStatus.textContent = 'auditing…';
-      tryResults.innerHTML = '<div class="empty">Hitting Helios backend…</div>';
-      try {
-        const res = await fetch('/api/live/audit/static', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: 'user.py', source_code: code }),
-        });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        const findings = data.findings || [];
-        if (findings.length === 0) {
-          tryResults.innerHTML = `<div style="color:var(--right);font-size:14px;">✓ No static issues found in ${data.elapsed_ms?.toFixed(1)}ms.</div>
-            <div class="small">For deeper analysis (LLM audit, fix, verify, GPU/quantum routing), install the MCP server.</div>`;
-        } else {
-          tryResults.innerHTML = findings.map(f => `
-            <div class="issue-card" style="margin-bottom:.5rem;">
-              <div class="issue-meta"><span class="sev">${f.severity.toUpperCase()}</span><span class="cat">${f.category}</span><span class="ln">line ${f.line_start}${f.line_end !== f.line_start ? '–' + f.line_end : ''}</span></div>
-              <div class="issue-title">${f.title}</div>
-              <div class="issue-expl">${f.explanation}</div>
-            </div>`).join('') +
-            `<div class="small">${findings.length} static finding${findings.length === 1 ? '' : 's'} in ${data.elapsed_ms?.toFixed(1)}ms. For fix &amp; verify, install the MCP server.</div>`;
-        }
-        tryStatus.textContent = 'done';
-      } catch (e) {
-        tryResults.innerHTML = `<div style="color:var(--wrong);font-size:14px;">Backend error: ${e.message}</div>
-          <div class="small">The backend may be cold-starting. Try again in a few seconds, or install the MCP server to run locally.</div>`;
-        tryStatus.textContent = 'error';
-      } finally {
-        auditBtn.disabled = false;
-      }
-    });
+    // ============= walkthrough state machine =============
+    const wk = {
+      progressSteps: document.querySelectorAll('.wk-progress-step'),
+      panels: document.querySelectorAll('.wk-panel'),
+      filename: document.getElementById('wkFilename'),
+      editor: document.getElementById('wkEditor'),
+      narration: document.getElementById('wkNarration'),
+      results: document.getElementById('wkResults'),
+      next: document.getElementById('wkNext'),
+      hint: document.getElementById('wkHint'),
+      example: null,
+      step: 1,
+    };
 
-    // ============= copy buttons =============
-    function bindCopy(id, text) {
-      const el = document.getElementById(id);
-      el.addEventListener('click', () => {
-        navigator.clipboard.writeText(text);
-        const orig = el.textContent;
-        el.textContent = 'copied';
-        setTimeout(() => { el.textContent = orig; }, 1200);
+    function wkShowPanel(name) {
+      wk.panels.forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+    }
+    function wkSetProgress(step) {
+      wk.progressSteps.forEach(p => {
+        const s = parseInt(p.dataset.prog);
+        p.classList.toggle('active', s === step);
+        p.classList.toggle('done', s < step);
       });
     }
-    bindCopy('cp1', 'pip install "helios[mcp]" && helios-mcp');
-    bindCopy('cp2', '{\n  "mcpServers": {\n    "helios": { "command": "helios-mcp" }\n  }\n}');
+    function wkSetEditor(code) {
+      wk.editor.innerHTML = code.map((ln, i) =>
+        `<span class="code-line ${ln.cls || ''}"><span class="ln">${String(i+1).padStart(2,' ')}</span>${ln.html}</span>`
+      ).join('');
+    }
+    function wkClearResults() { wk.results.innerHTML = ''; }
+    function wkAppend(html) {
+      const div = document.createElement('div');
+      div.className = 'stage-result';
+      div.innerHTML = html;
+      wk.results.appendChild(div);
+      requestAnimationFrame(() => div.classList.add('in'));
+      wk.results.scrollTop = wk.results.scrollHeight;
+      return div;
+    }
+    async function wkStream(container, lines, perMs = 280) {
+      for (const text of lines) {
+        const span = document.createElement('div');
+        span.className = 'progress-line';
+        span.textContent = text;
+        container.appendChild(span);
+        wk.results.scrollTop = wk.results.scrollHeight;
+        await sleep(40);
+        span.classList.add('in');
+        await sleep(perMs - 40);
+      }
+    }
+    function wkSetNarration(html) {
+      wk.narration.style.opacity = '0';
+      setTimeout(() => { wk.narration.innerHTML = html; wk.narration.style.opacity = '1'; }, 200);
+    }
+    function wkSetNext(label, hintHtml) {
+      wk.next.textContent = label;
+      if (hintHtml) wk.hint.innerHTML = hintHtml;
+    }
 
-    // ============= file drop =============
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const userCode = document.getElementById('userCode');
-    let droppedFilename = 'untitled.py';
+    function wkLoadExample(idx) {
+      wk.example = examples[idx];
+      wk.exIndex = idx;
+      wk.step = 2;
+      wkSetProgress(2);
+      wkShowPanel('demo');
+      wk.filename.textContent = wk.example.filename;
+      wkSetEditor(wk.example.code);
+      wkClearResults();
+      wkSetNarration('Click <strong style="color:var(--sun)">Run audit</strong> below to begin.');
+      wkSetNext('▶ Run audit', 'step <strong>2</strong> of 5 — audit');
+      // sync switcher pills
+      document.querySelectorAll('.wk-ex-pill').forEach(p =>
+        p.classList.toggle('active', parseInt(p.dataset.swex) === idx)
+      );
+      bindHover();
+    }
 
-    function loadFile(file) {
-      droppedFilename = file.name;
+    document.querySelectorAll('.wk-ex').forEach(btn => {
+      btn.addEventListener('click', () => wkLoadExample(parseInt(btn.dataset.ex)));
+    });
+
+    // demo-panel example switcher — swap example without losing the demo context
+    document.querySelectorAll('.wk-ex-pill').forEach(btn => {
+      btn.addEventListener('click', () => wkLoadExample(parseInt(btn.dataset.swex)));
+    });
+
+    document.getElementById('wkRestart').addEventListener('click', () => {
+      wk.example = null;
+      wk.step = 1;
+      wkSetProgress(1);
+      wkShowPanel('step1');
+    });
+
+    let wkBusy = false;
+    wk.next.addEventListener('click', async () => {
+      if (wkBusy || !wk.example) return;
+      wkBusy = true;
+      wk.next.disabled = true;
+      const ex = wk.example;
+
+      if (wk.step === 2) {
+        wkSetNarration(ex.audit.narration);
+        const a = wkAppend('<div class="stage-label">02 · Audit</div><div class="prog"></div>');
+        await wkStream(a.querySelector('.prog'), ex.audit.progress);
+        a.insertAdjacentHTML('beforeend', `
+          <div class="issue-card">
+            <div class="issue-meta"><span class="sev">${ex.audit.card.sev}</span><span class="cat">${ex.audit.card.cat}</span><span class="ln">line ${ex.audit.card.line}</span></div>
+            <div class="issue-title">${ex.audit.card.title}</div>
+            <div class="issue-expl">${ex.audit.card.expl}</div>
+          </div>`);
+        wk.step = 3;
+        wkSetProgress(3);
+        wkSetNext('▶ Generate fix', 'step <strong>3</strong> of 5 — fix');
+      } else if (wk.step === 3) {
+        wkSetNarration(ex.fix.narration);
+        const f = wkAppend('<div class="stage-label">03 · Fix</div><div class="prog"></div>');
+        await wkStream(f.querySelector('.prog'), ex.fix.progress);
+        const diffHtml = ex.fix.diff.map(d =>
+          `<span class="dl del">${d.del.replace(/</g,'&lt;')}</span><span class="dl add">${d.add.replace(/</g,'&lt;')}</span>`
+        ).join('');
+        f.insertAdjacentHTML('beforeend', `<div class="diff">${diffHtml}</div>`);
+        wk.step = 4;
+        wkSetProgress(4);
+        wkSetNext('▶ Verify', 'step <strong>4</strong> of 5 — verify');
+      } else if (wk.step === 4) {
+        wkSetNarration(ex.verify.narration);
+        const v = wkAppend('<div class="stage-label">04 · Verify</div><div class="prog"></div>');
+        await wkStream(v.querySelector('.prog'), ex.verify.progress, 300);
+        v.insertAdjacentHTML('beforeend', `
+          <table class="vt"><thead><tr><th>#</th><th>input</th><th>orig</th><th>fix</th><th>agree</th></tr></thead><tbody class="vbody"></tbody></table>
+          <div class="verdict vbanner"><span>${ex.verify.banner}</span><span class="note">${ex.verify.note}</span></div>`);
+        const vbody = v.querySelector('.vbody');
+        for (let i = 0; i < ex.verify.rows.length; i++) {
+          const [n,inp,o,fv,ag] = ex.verify.rows[i];
+          const tr = document.createElement('tr');
+          tr.style.animationDelay = (i * 50) + 'ms';
+          tr.innerHTML = `<td>${n}</td><td>${inp}</td><td>${o}</td><td>${fv}</td>${ag?'<td class="ok">✓</td>':'<td class="no">✗</td>'}`;
+          vbody.appendChild(tr);
+          wk.results.scrollTop = wk.results.scrollHeight;
+          await sleep(50);
+        }
+        await sleep(180);
+        v.querySelector('.vbanner').classList.add('in');
+        wk.step = 5;
+        wkSetProgress(5);
+        wkSetNext('▶ Route', 'step <strong>5</strong> of 5 — route');
+      } else if (wk.step === 5) {
+        wkSetNarration(ex.route.narration);
+        const r = wkAppend('<div class="stage-label">05 · Route</div><div class="prog"></div>');
+        await wkStream(r.querySelector('.prog'), ex.route.progress, 320);
+        let routeHtml = '';
+        if (ex.route.gpu || ex.route.quantum) {
+          routeHtml = '<div class="route-grid">';
+          if (ex.route.gpu) routeHtml += `
+            <div class="route-card">
+              <div class="route-tag"><span class="pat">CLASSICAL · GPU</span><span class="speedup">${ex.route.gpu.speedup}</span></div>
+              <div class="route-rationale">${ex.route.gpu.rationale}</div>
+            </div>`;
+          if (ex.route.quantum) routeHtml += `
+            <div class="route-card q">
+              <div class="route-tag"><span class="pat">QUANTUM · QAE</span><span class="speedup">${ex.route.quantum.speedup}</span></div>
+              <div class="route-rationale">${ex.route.quantum.rationale}</div>
+            </div>`;
+          routeHtml += '</div>';
+        } else {
+          routeHtml = `<div style="padding:.75rem;background:rgba(110,119,135,0.05);border-left:2px solid var(--dim);font-size:13px;color:var(--dim);font-style:italic;">${ex.route.empty}</div>`;
+        }
+        r.insertAdjacentHTML('beforeend', routeHtml);
+        wkSetNarration(ex.closing);
+        wk.step = 6;
+        wkSetNext('↺ Try another', 'walkthrough complete');
+      } else if (wk.step === 6) {
+        wk.example = null;
+        wk.step = 1;
+        wkSetProgress(1);
+        wkShowPanel('step1');
+        wkSetNext('▶ Run audit', 'step <strong>2</strong> of 5');
+      }
+
+      wk.next.disabled = false;
+      wkBusy = false;
+    });
+
+    // walkthrough paste — full pipeline redirect
+    let wkDroppedFilename = 'untitled.py';
+    const wkUserCodeEl = document.getElementById('wkUserCode');
+    const wkDropZone = document.getElementById('wkDropZone');
+    const wkFileInput = document.getElementById('wkFileInput');
+    function wkLoadFile(file) {
+      wkDroppedFilename = file.name;
       const reader = new FileReader();
       reader.onload = e => {
-        userCode.value = e.target.result;
-        dropZone.innerHTML = `✓ ${file.name} (${(file.size/1024).toFixed(1)} kB) <span class="or">·</span> Replace`;
+        wkUserCodeEl.value = e.target.result;
+        wkDropZone.innerHTML = `✓ ${file.name} (${(file.size/1024).toFixed(1)} kB) <span class="or">·</span> Replace`;
       };
       reader.readAsText(file);
     }
-
-    dropZone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+    wkDropZone.addEventListener('click', () => wkFileInput.click());
+    wkFileInput.addEventListener('change', e => { if (e.target.files[0]) wkLoadFile(e.target.files[0]); });
     ['dragenter', 'dragover'].forEach(ev => {
-      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('over'); });
+      wkDropZone.addEventListener(ev, e => {
+        e.preventDefault();
+        wkDropZone.classList.add('over');
+        // peek at the dragged item to predict accept/reject
+        const item = e.dataTransfer?.items?.[0];
+        if (item) {
+          const looksOk = item.type === 'text/x-python' ||
+            (item.kind === 'file' && (item.type === '' || item.type.startsWith('text')));
+          wkDropZone.dataset.state = looksOk ? 'ok' : 'reject';
+        }
+      });
     });
     ['dragleave', 'drop'].forEach(ev => {
-      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('over'); });
+      wkDropZone.addEventListener(ev, e => {
+        e.preventDefault();
+        wkDropZone.classList.remove('over');
+        delete wkDropZone.dataset.state;
+      });
     });
-    dropZone.addEventListener('drop', e => {
+    wkDropZone.addEventListener('drop', e => {
       const file = e.dataTransfer?.files?.[0];
-      if (file && (file.name.endsWith('.py') || file.type === 'text/x-python')) loadFile(file);
+      if (file && (file.name.endsWith('.py') || file.type === 'text/x-python')) wkLoadFile(file);
     });
 
-    // ============= full pipeline (create session + redirect to reviewer) =============
-    const fullBtn = document.getElementById('fullPipelineBtn');
-    fullBtn.addEventListener('click', async () => {
-      const code = userCode.value.trim();
+    function wkClearError() {
+      const old = document.getElementById('wkInlineError');
+      if (old) old.remove();
+    }
+    function wkShowError(html) {
+      wkClearError();
+      const div = document.createElement('div');
+      div.id = 'wkInlineError';
+      div.className = 'wk-inline-error';
+      div.innerHTML = html;
+      document.querySelector('[data-panel="step1"] .wk-step1-col').appendChild(div);
+    }
+
+    document.getElementById('wkRunPipeline').addEventListener('click', async () => {
+      const code = wkUserCodeEl.value.trim();
+      const btn = document.getElementById('wkRunPipeline');
+      wkClearError();
       if (!code) {
-        tryResults.innerHTML = '<div class="empty">Paste or drop some Python first.</div>';
+        wkShowError('<strong>nothing to run</strong>paste your Python above, or drop a .py file. or pick one of the three example bugs on the right →');
         return;
       }
-      fullBtn.disabled = true;
-      tryStatus.textContent = 'creating session…';
-      tryResults.innerHTML = '<div class="empty">Creating session, redirecting to the reviewer…</div>';
+      btn.disabled = true;
+      btn.textContent = 'creating session…';
       try {
         const res = await fetch('/api/sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: droppedFilename, source_code: code }),
+          body: JSON.stringify({ filename: wkDroppedFilename, source_code: code }),
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const session = await res.json();
         window.location.href = `/app/session/?id=${encodeURIComponent(session.id)}`;
       } catch (e) {
-        tryResults.innerHTML = `<div style="color:var(--wrong);font-size:14px;">Backend error: ${e.message}</div>
-          <div class="small">Try the quick audit, or install the MCP server to run locally.</div>`;
-        tryStatus.textContent = 'error';
-        fullBtn.disabled = false;
+        btn.disabled = false;
+        btn.textContent = '▶ Run full pipeline';
+        wkShowError(`<strong>backend offline</strong>the helios API at <code>/api/sessions</code> didn't respond (${e.message}). this preview is static — to run the full pipeline on your code, deploy the backend or use the <a href="https://github.com/anthropics/claude-code">MCP server</a>. <br/><br/>or try one of the three example bugs on the right — those run fully in the browser →`);
       }
     });
   </script>

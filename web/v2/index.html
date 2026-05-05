@@ -58,7 +58,7 @@
       top: 1.25rem; left: 1.5rem;
       z-index: 100;
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 13px;
       letter-spacing: 0.18em;
       text-transform: uppercase;
       color: var(--dim);
@@ -73,7 +73,7 @@
       letter-spacing: 0.3em;
     }
     .header .sep { color: var(--sun); }
-    .header .slogan { color: var(--dim); font-weight: 400; text-transform: none; letter-spacing: 0.05em; font-size: 10.5px; }
+    .header .slogan { color: var(--dim); font-weight: 400; text-transform: none; letter-spacing: 0.05em; font-size: 12.5px; }
 
     main { position: relative; z-index: 1; }
 
@@ -95,7 +95,7 @@
       padding: 1rem 1rem;
       background: var(--bg);
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.3em;
       text-transform: uppercase;
       color: var(--dim);
@@ -140,7 +140,7 @@
       padding: .85rem 1.25rem;
       border-bottom: 1px solid var(--line);
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.25em;
       text-transform: uppercase;
       color: var(--dim);
@@ -162,7 +162,7 @@
       padding: 1.25rem 0;
       overflow: auto;
       font-family: var(--mono);
-      font-size: 13px;
+      font-size: 15px;
       line-height: 1.85;
     }
     .code-line {
@@ -199,8 +199,19 @@
       letter-spacing: 0;
       font-family: var(--serif);
       font-style: italic;
-      font-size: 13px;
+      font-size: 15px;
       transition: opacity .3s;
+      flex: 1;
+    }
+    .ex-counter {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      color: var(--sun);
+      font-variant-numeric: tabular-nums;
+      transition: color .3s;
+      flex-shrink: 0;
+      margin-left: 1rem;
     }
     .stage-result {
       padding: 1rem 1.25rem;
@@ -212,7 +223,7 @@
     .stage-result.in { opacity: 1; transform: translateY(0); }
     .stage-label {
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.25em;
       text-transform: uppercase;
       color: var(--sun);
@@ -220,7 +231,7 @@
     }
     .progress-line {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 13px;
       color: var(--dim);
       opacity: 0;
       transition: opacity .3s;
@@ -236,7 +247,7 @@
     }
     .issue-meta {
       display: flex; gap: .75rem;
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       margin-bottom: .35rem;
@@ -244,13 +255,13 @@
     .issue-meta .sev { color: var(--wrong); font-weight: 600; }
     .issue-meta .cat { color: var(--dim); }
     .issue-meta .ln { color: var(--sun); margin-left: auto; }
-    .issue-title { color: var(--fg); font-size: 13px; margin-bottom: .25rem; font-weight: 500; }
-    .issue-expl { color: var(--dim); font-size: 11px; line-height: 1.6; }
+    .issue-title { color: var(--fg); font-size: 15px; margin-bottom: .25rem; font-weight: 500; }
+    .issue-expl { color: var(--dim); font-size: 13px; line-height: 1.6; }
 
     .diff {
       margin-top: .5rem;
       font-family: var(--mono);
-      font-size: 12px;
+      font-size: 14px;
       line-height: 1.7;
       background: var(--bg);
       border: 1px solid var(--line);
@@ -261,8 +272,8 @@
     .dl.del::before { content: '- '; opacity: .7; }
     .dl.add::before { content: '+ '; opacity: .7; }
 
-    .vt { width: 100%; font-family: var(--mono); font-size: 11px; border-collapse: collapse; margin-top: .5rem; }
-    .vt th { text-align: left; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); padding: .25rem .4rem; border-bottom: 1px solid var(--line); font-weight: 500; }
+    .vt { width: 100%; font-family: var(--mono); font-size: 13px; border-collapse: collapse; margin-top: .5rem; }
+    .vt th { text-align: left; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); padding: .25rem .4rem; border-bottom: 1px solid var(--line); font-weight: 500; }
     .vt td { padding: .2rem .4rem; border-bottom: 1px solid rgba(26,34,48,0.5); color: var(--fg); }
     .vt td.ok { color: var(--right); }
     .vt td.no { color: var(--wrong); }
@@ -272,7 +283,7 @@
       margin-top: .5rem;
       padding: .55rem .75rem;
       font-family: var(--mono);
-      font-size: 10.5px;
+      font-size: 12.5px;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       background: rgba(232,163,61,0.06);
@@ -282,7 +293,7 @@
       transition: opacity .4s;
     }
     .verdict.in { opacity: 1; }
-    .verdict .note { color: var(--dim); font-size: 10px; letter-spacing: 0.05em; text-transform: none; font-style: italic; display: block; margin-top: .3rem; }
+    .verdict .note { color: var(--dim); font-size: 12px; letter-spacing: 0.05em; text-transform: none; font-style: italic; display: block; margin-top: .3rem; }
 
     .route-grid {
       display: grid;
@@ -298,50 +309,59 @@
     .route-card.q { background: rgba(192,138,255,0.06); border-left-color: var(--quantum); }
     .route-tag {
       display: flex; gap: .5rem; align-items: baseline;
-      font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+      font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase;
       color: var(--dim); margin-bottom: .35rem;
     }
     .route-tag .pat { color: var(--sun); font-weight: 600; }
     .route-card.q .route-tag .pat { color: var(--quantum); }
     .route-tag .speedup { margin-left: auto; color: var(--right); }
     .route-card.q .route-tag .speedup { color: var(--quantum); }
-    .route-rationale { font-size: 11px; line-height: 1.6; color: var(--fg); opacity: .85; }
+    .route-rationale { font-size: 13px; line-height: 1.6; color: var(--fg); opacity: .85; }
 
     /* ---- CTA section ---- */
     .cta-section {
       max-width: 1280px;
       margin: 0 auto;
       padding: 3rem 5vw 1.5rem;
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 2.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem 2rem;
       align-items: center;
+      justify-content: space-between;
     }
     .start-btn {
       font-family: var(--mono);
-      font-size: 12px;
-      letter-spacing: 0.3em;
+      font-size: 13px;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--bg);
       background: var(--sun);
-      padding: 1.1rem 2.25rem;
+      padding: 1rem 1.75rem;
       border: none;
       cursor: none;
       font-weight: 600;
-      transition: background .2s, transform .15s, letter-spacing .25s;
+      transition: background .2s, transform .15s;
       display: inline-flex;
       align-items: center;
       gap: 1ch;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .start-btn:hover { background: var(--sun-warm); transform: translateY(-2px); letter-spacing: 0.36em; }
+    .start-btn:hover { background: var(--sun-warm); transform: translateY(-2px); }
+    .start-btn.pulse { animation: btnpulse 1.6s ease-in-out infinite; }
+    @keyframes btnpulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(232,163,61,0.5); }
+      50% { box-shadow: 0 0 0 14px rgba(232,163,61,0); }
+    }
     .waitlist {
       display: flex;
       align-items: center;
       gap: .75rem;
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 13px;
       color: var(--dim);
       letter-spacing: 0.05em;
+      flex-wrap: wrap;
     }
     .waitlist input {
       background: transparent;
@@ -350,8 +370,9 @@
       padding: .5rem .25rem;
       color: var(--fg);
       font-family: var(--mono);
-      font-size: 12px;
-      width: 240px;
+      font-size: 14px;
+      width: 200px;
+      max-width: 100%;
       transition: border-color .3s;
       cursor: none;
     }
@@ -362,7 +383,7 @@
       border: 1px solid var(--line);
       color: var(--dim);
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       padding: .55rem .9rem;
@@ -396,7 +417,7 @@
     }
     .try-pane h3 {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 13px;
       letter-spacing: 0.25em;
       text-transform: uppercase;
       color: var(--sun);
@@ -410,7 +431,7 @@
       border: 1px solid var(--line);
       padding: .75rem;
       font-family: var(--mono);
-      font-size: 12px;
+      font-size: 14px;
       line-height: 1.6;
       resize: vertical;
       cursor: none;
@@ -419,7 +440,7 @@
     .try-actions { display: flex; gap: .75rem; margin-top: .75rem; align-items: center; }
     .try-btn {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 13px;
       letter-spacing: 0.25em;
       text-transform: uppercase;
       color: var(--bg);
@@ -431,22 +452,22 @@
     }
     .try-btn:hover { background: var(--sun-warm); }
     .try-btn:disabled { opacity: .4; }
-    .try-status { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--dim); text-transform: uppercase; }
+    .try-status { font-family: var(--mono); font-size: 12px; letter-spacing: 0.2em; color: var(--dim); text-transform: uppercase; }
     .try-results {
       font-family: var(--mono);
-      font-size: 12px;
+      font-size: 14px;
       color: var(--fg);
       max-height: 300px;
       overflow-y: auto;
     }
-    .try-results .empty { color: var(--dim); font-style: italic; font-size: 11px; }
+    .try-results .empty { color: var(--dim); font-style: italic; font-size: 13px; }
     .try-results .install {
       background: var(--bg);
       border: 1px solid var(--line);
       padding: .75rem 1rem;
       margin-top: .5rem;
       font-family: var(--mono);
-      font-size: 12px;
+      font-size: 14px;
       color: var(--right);
       white-space: pre;
       overflow-x: auto;
@@ -455,7 +476,7 @@
     .try-results .install .copy {
       position: absolute;
       top: .5rem; right: .5rem;
-      font-size: 9px;
+      font-size: 11px;
       color: var(--dim);
       background: var(--bg-1);
       padding: .25rem .5rem;
@@ -466,7 +487,7 @@
     }
     .try-results .install .copy:hover { color: var(--sun); border-color: var(--sun); }
     .try-results .small {
-      font-size: 10.5px;
+      font-size: 12.5px;
       color: var(--dim);
       margin-top: .5rem;
       line-height: 1.6;
@@ -484,7 +505,7 @@
     }
     .info-col h4 {
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.3em;
       text-transform: uppercase;
       color: var(--sun);
@@ -492,7 +513,7 @@
     }
     .info-col p {
       font-family: var(--mono);
-      font-size: 12.5px;
+      font-size: 14.5px;
       color: var(--fg);
       line-height: 1.7;
       opacity: .82;
@@ -507,7 +528,7 @@
       padding: 1.5rem 5vw 2rem;
       border-top: 1px solid var(--line);
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--dim);
@@ -521,7 +542,7 @@
       padding: 1rem;
       text-align: center;
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 13px;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--dim);
@@ -538,7 +559,7 @@
 
     .try-btn-secondary {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 13px;
       letter-spacing: 0.25em;
       text-transform: uppercase;
       color: var(--sun);
@@ -581,7 +602,7 @@
     .step-item:hover { background: rgba(232,163,61,0.03); }
     .step-item .step-num {
       font-family: var(--serif);
-      font-size: 36px;
+      font-size: 37px;
       font-weight: 300;
       color: var(--sun);
       line-height: 1;
@@ -591,7 +612,7 @@
     }
     .step-item h3 {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 13px;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--fg);
@@ -600,20 +621,25 @@
     }
     .step-item p {
       font-family: var(--mono);
-      font-size: 11.5px;
+      font-size: 13.5px;
       line-height: 1.7;
       color: var(--dim);
     }
     .step-item .key { color: var(--sun); }
 
     @media (max-width: 900px) {
-      .demo, .try-grid, .info, .cta-section { grid-template-columns: 1fr; }
+      .demo, .try-grid, .info { grid-template-columns: 1fr; }
       .editor { border-right: none; border-bottom: 1px solid var(--line); }
       .stage-bar { grid-template-columns: repeat(2, 1fr); }
       .header .slogan { display: none; }
       .step-list { grid-template-columns: 1fr; }
       .step-item { border-left: none; border-top: 1px solid var(--line); }
       .step-item:first-child { border-top: none; }
+      .cta-section { flex-direction: column; align-items: stretch; padding: 2rem 5vw 1.5rem; }
+      .start-btn { width: 100%; justify-content: center; padding: 1rem 1rem; font-size: 12px; letter-spacing: 0.18em; }
+      .waitlist { justify-content: stretch; }
+      .waitlist .label { display: none; }
+      .waitlist input { flex: 1; min-width: 0; }
     }
   </style>
 </head>
@@ -649,7 +675,8 @@
         </div>
         <div class="pane results">
           <div class="pane-head">
-            <span class="narration" id="narration">Watching helios audit, fix, verify, and route a real scientific bug.</span>
+            <span class="narration" id="narration">Walking through three real scientific bugs.</span>
+            <span class="ex-counter" id="counter">1 / 3</span>
           </div>
           <div id="results"></div>
         </div>
@@ -693,12 +720,12 @@
         </div>
         <div class="try-pane">
           <h3>Install the MCP server</h3>
-          <p style="font-size:12px;color:var(--dim);line-height:1.7;margin-bottom:.5rem;">Run helios locally inside Claude, Cursor, or any MCP-compatible agent.</p>
+          <p style="font-size:14px;color:var(--dim);line-height:1.7;margin-bottom:.5rem;">Run helios locally inside Claude, Cursor, or any MCP-compatible agent.</p>
           <div class="install">
             <span class="copy" id="cp1">copy</span>
             <code>pip install "helios[mcp]" &amp;&amp; helios-mcp</code>
           </div>
-          <p style="font-size:11px;color:var(--dim);line-height:1.7;margin:.75rem 0 .35rem;">Then add to <code style="color:var(--fg);">~/Library/Application Support/Claude/claude_desktop_config.json</code>:</p>
+          <p style="font-size:13px;color:var(--dim);line-height:1.7;margin:.75rem 0 .35rem;">Then add to <code style="color:var(--fg);">~/Library/Application Support/Claude/claude_desktop_config.json</code>:</p>
           <div class="install">
             <span class="copy" id="cp2">copy</span><code>{
   "mcpServers": {
@@ -858,25 +885,133 @@
     }
     bindHover();
 
-    // ============= demo =============
-    const codeLines = [
-      { html: '<span class="cm"># integrate.py — trapezoidal rule on f(x) samples</span>' },
-      { html: '<span class="kw">def</span> <span class="fn">integrate</span>(f_values, dx):' },
-      { html: '    n = <span class="fn">len</span>(f_values)' },
-      { html: '    total = <span class="nm">0.0</span>' },
-      { html: '    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">1</span>, n - <span class="nm">1</span>):  <span class="cm"># off-by-one</span>', cls: 'bug' },
-      { html: '        total += <span class="nm">0.5</span> * (f_values[i] + f_values[i+<span class="nm">1</span>]) * dx' },
-      { html: '    <span class="kw">return</span> total' },
+    // ============= demo (multi-example walkthrough) =============
+    const examples = [
+      {
+        filename: 'integrate.py',
+        intro: 'A trapezoidal integrator with an off-by-one. Silently drops the first interval.',
+        code: [
+          { html: '<span class="cm"># integrate.py — trapezoidal rule on f(x) samples</span>' },
+          { html: '<span class="kw">def</span> <span class="fn">integrate</span>(f_values, dx):' },
+          { html: '    n = <span class="fn">len</span>(f_values)' },
+          { html: '    total = <span class="nm">0.0</span>' },
+          { html: '    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">1</span>, n - <span class="nm">1</span>):  <span class="cm"># off-by-one</span>', cls: 'bug' },
+          { html: '        total += <span class="nm">0.5</span> * (f_values[i] + f_values[i+<span class="nm">1</span>]) * dx' },
+          { html: '    <span class="kw">return</span> total' },
+        ],
+        audit: { narration: 'Static AST + LLM audit. Looking for silent scientific bugs.', progress: ['parsing AST', 'static checks', 'merging signals'],
+          card: { sev: 'HIGH', cat: 'off_by_one', line: '5', title: 'Loop starts at index 1 — possible off-by-one', expl: 'range(1, n-1) skips index 0. The trapezoidal rule should integrate over every interval — drops the first interval, silently wrong.' } },
+        fix: { narration: 'Now it rewrites — only the bug changes, nothing else.', progress: ['identifying target function', 'generating minimal rewrite'],
+          diff: [{ del: '    for i in range(1, n - 1):  # off-by-one', add: '    for i in range(0, n - 1):' }] },
+        verify: { narration: 'Both versions run in sandboxes on synthesized inputs.', progress: ['synthesizing 12 inputs', 'sandbox A: original', 'sandbox B: fix', 'numpy.allclose'],
+          rows: [
+            ['1','[0.0, 0.5, 1.0, 1.5, 2.0]','1.875','2.000', false],
+            ['2','[1.0, 1.0, 1.0, 1.0]','2.000','3.000', false],
+            ['3','[0.0, 0.0, 0.0]','0.000','0.000', true],
+            ['4','[2.0, 4.0, 6.0, 8.0]','14.00','20.00', false],
+            ['5','[1e-9, 1e-9, 1e-9]','1e-9','2e-9', false],
+            ['6','[]','ValueError','ValueError', true],
+            ['7','[3.14]','0.000','0.000', true],
+            ['8','[-1, 1, -1, 1]','0.000','0.000', true],
+            ['9','[1.0, 2.0]','0.000','1.500', false],
+            ['10','[0.5, 1.5, 2.5]','2.000','3.000', false],
+            ['11','[1e6, 2e6]','0.000','1.5e6', false],
+            ['12','[100, 200, 300]','300.0','500.0', false],
+          ],
+          banner: 'Fix changes behavior on 8 / 12 inputs · bug confirmed',
+          note: 'Disagreement is the bug. Cases 3, 6–8 hit edges where the bug doesn\'t fire.' },
+        route: { narration: 'Now the part that matters — where should this actually run?', progress: ['scanning hot blocks', 'classical: GPU pattern match', 'quantum: amplitude estimation candidate'],
+          gpu: { speedup: '~10×', rationale: 'Numeric reduction loop. Vectorize with np.trapz, or GPU for n &gt; 10⁶. Engineering: low.' },
+          quantum: { speedup: '~quadratic', rationale: 'Textbook quantum amplitude estimation target. ~√N speedup at large sample counts. Worth it for n &gt; 10⁹.' } },
+        closing: 'Audit → fix → verify → route. Right code, right hardware.',
+      },
+      {
+        filename: 'simulate.py',
+        intro: 'A Monte Carlo simulator with mutable default state that leaks across calls.',
+        code: [
+          { html: '<span class="cm"># simulate.py — running history of states</span>' },
+          { html: '<span class="kw">def</span> <span class="fn">simulate</span>(steps, history=[]):  <span class="cm"># mutable default!</span>', cls: 'bug' },
+          { html: '    state = <span class="nm">0.0</span>' },
+          { html: '    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(steps):' },
+          { html: '        state += <span class="nm">1.0</span>' },
+          { html: '        history.append(state)' },
+          { html: '    <span class="kw">return</span> history' },
+        ],
+        audit: { narration: 'Different bug, different shape. Mutable default detected.', progress: ['parsing AST', 'static checks: defaults', 'LLM: state-leak risk'],
+          card: { sev: 'MEDIUM', cat: 'mutable_default', line: '2', title: 'Mutable default argument in simulate', expl: 'history=[] is created once at definition time and shared across every call. State leaks between invocations and corrupts results that look reproducible.' } },
+        fix: { narration: 'Sentinel pattern — None default, allocate fresh inside.', progress: ['identifying target function', 'rewriting signature + body'],
+          diff: [{ del: 'def simulate(steps, history=[]):', add: 'def simulate(steps, history=None):' }, { del: '    state = 0.0', add: '    if history is None: history = []\n    state = 0.0' }] },
+        verify: { narration: 'Sandbox calls the function 12 times. Bug shows up after the first.', progress: ['synthesizing 12 inputs', 'sandbox A: original', 'sandbox B: fix', 'comparing'],
+          rows: [
+            ['1','(3,)','len=3','len=3', true],
+            ['2','(2,)','len=5','len=2', false],
+            ['3','(1,)','len=6','len=1', false],
+            ['4','(4,)','len=10','len=4', false],
+            ['5','(0,)','len=10','len=0', false],
+            ['6','(5,)','len=15','len=5', false],
+            ['7','(2,)','len=17','len=2', false],
+            ['8','(1,)','len=18','len=1', false],
+            ['9','(3,)','len=21','len=3', false],
+            ['10','(7,)','len=28','len=7', false],
+            ['11','(2,)','len=30','len=2', false],
+            ['12','(1,)','len=31','len=1', false],
+          ],
+          banner: 'Bug confirmed: state leaks across calls (1 / 12 agree)',
+          note: 'First call agrees by coincidence. Every call after shows the leak — the original list grows monotonically.' },
+        route: { narration: 'Routing: nothing here is GPU- or quantum-shaped.', progress: ['scanning hot blocks', 'no nested loops, no matmul, no FFT'],
+          gpu: null, quantum: null,
+          empty: 'Function is scalar / IO-bound. No hardware acceleration recommended.' },
+        closing: 'Same pipeline, different bug. Helios catches both.',
+      },
+      {
+        filename: 'converged.py',
+        intro: 'A solver convergence check using exact float equality. Almost never converges.',
+        code: [
+          { html: '<span class="cm"># converged.py — iterative solver convergence test</span>' },
+          { html: '<span class="kw">def</span> <span class="fn">is_converged</span>(prev, curr):' },
+          { html: '    <span class="kw">return</span> <span class="fn">abs</span>(prev - curr) == <span class="nm">0.0</span>  <span class="cm"># float ==</span>', cls: 'bug' },
+        ],
+        audit: { narration: 'Last one. Float equality in a convergence loop.', progress: ['parsing AST', 'static checks: float equality', 'LLM: convergence loop risk'],
+          card: { sev: 'MEDIUM', cat: 'float_equality', line: '3', title: 'Float equality comparison', expl: 'Comparing floats with == is unreliable due to rounding. Iterative solvers may never reach exact zero — the loop runs forever, or converges only by accident.' } },
+        fix: { narration: 'Replace exact equality with a tolerance threshold.', progress: ['identifying target function', 'generating minimal rewrite'],
+          diff: [{ del: '    return abs(prev - curr) == 0.0  # float ==', add: '    return abs(prev - curr) < 1e-9' }] },
+        verify: { narration: 'Sandbox tests both versions on edge-case inputs.', progress: ['synthesizing 12 inputs', 'sandbox A: original', 'sandbox B: fix', 'comparing booleans'],
+          rows: [
+            ['1','(1.0, 1.0)','True','True', true],
+            ['2','(2.0, 1.0)','False','False', true],
+            ['3','(1.0, 1.0+1e-15)','False','True', false],
+            ['4','(0.1+0.2, 0.3)','False','True', false],
+            ['5','(0.0, 0.0)','True','True', true],
+            ['6','(1e10, 1e10)','True','True', true],
+            ['7','(1.0, 2.0)','False','False', true],
+            ['8','(-1.0, -1.0)','True','True', true],
+            ['9','(1e-20, 0.0)','False','True', false],
+            ['10','(3.14, 3.14)','True','True', true],
+            ['11','(1.0, 1.0+1e-16)','False','True', false],
+            ['12','(5.5, 5.5)','True','True', true],
+          ],
+          banner: '8 / 12 agree · 4 disagree where fix accepts near-zero',
+          note: 'Those 4 are exactly the inputs the bug would reject — sub-epsilon differences that should count as converged.' },
+        route: { narration: 'Routing: scalar predicate, no acceleration target.', progress: ['scanning hot blocks', 'scalar boolean function'],
+          gpu: null, quantum: null,
+          empty: 'Boolean predicate with no array math. Stays on CPU.' },
+        closing: 'Three bugs, three sandboxed proofs. Now drop in your own.',
+      },
     ];
-    const editor = document.getElementById('editor');
-    editor.innerHTML = codeLines.map((ln, i) =>
-      `<span class="code-line ${ln.cls || ''}"><span class="ln">${String(i+1).padStart(2,' ')}</span>${ln.html}</span>`
-    ).join('');
 
+    const editor = document.getElementById('editor');
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     const results = document.getElementById('results');
     const stagePills = document.querySelectorAll('.stage-pill');
 
+    function setEditor(code) {
+      editor.innerHTML = code.map((ln, i) =>
+        `<span class="code-line ${ln.cls || ''}"><span class="ln">${String(i+1).padStart(2,' ')}</span>${ln.html}</span>`
+      ).join('');
+    }
+    function setFilename(name) {
+      document.querySelector('.editor .pane-head .filename').textContent = name;
+    }
     function setStage(name, state) {
       stagePills.forEach(p => {
         if (p.dataset.stage === name) {
@@ -885,126 +1020,148 @@
         }
       });
     }
-
+    function resetStages() {
+      stagePills.forEach(p => p.classList.remove('active', 'done'));
+    }
     function setNarration(text) {
       const n = document.getElementById('narration');
       n.style.opacity = '0';
       setTimeout(() => { n.textContent = text; n.style.opacity = '1'; }, 200);
     }
-
+    function setCounter(i, total) {
+      document.getElementById('counter').textContent = `${i} / ${total}`;
+    }
+    function clearResults() {
+      results.innerHTML = '';
+    }
     function appendResult(html) {
       const div = document.createElement('div');
       div.className = 'stage-result';
       div.innerHTML = html;
       results.appendChild(div);
       requestAnimationFrame(() => div.classList.add('in'));
+      results.scrollTop = results.scrollHeight;
       return div;
     }
-
-    async function streamProgress(container, lines, perMs = 380) {
+    async function streamProgress(container, lines, perMs = 340) {
       for (const text of lines) {
         const span = document.createElement('div');
         span.className = 'progress-line';
         span.textContent = text;
         container.appendChild(span);
+        results.scrollTop = results.scrollHeight;
         await sleep(40);
         span.classList.add('in');
         await sleep(perMs - 40);
       }
     }
 
-    async function runDemo() {
-      // 01 AUDIT
+    async function runExample(ex, idx, total) {
+      setCounter(idx + 1, total);
+      setFilename(ex.filename);
+      setEditor(ex.code);
+      resetStages();
+      clearResults();
+      setNarration(ex.intro);
+      await sleep(700);
+
+      // AUDIT
       setStage('audit', 'active');
-      setNarration('Static AST + LLM audit. Looking for silent scientific bugs.');
-      const audit = appendResult('<div class="stage-label">01 · Audit</div><div class="prog"></div>');
-      const auditProg = audit.querySelector('.prog');
-      await streamProgress(auditProg, ['parsing AST', 'static checks', 'merging signals'], 320);
-      audit.insertAdjacentHTML('beforeend', `
+      setNarration(ex.audit.narration);
+      const a = appendResult('<div class="stage-label">01 · Audit</div><div class="prog"></div>');
+      await streamProgress(a.querySelector('.prog'), ex.audit.progress, 300);
+      a.insertAdjacentHTML('beforeend', `
         <div class="issue-card">
-          <div class="issue-meta"><span class="sev">HIGH</span><span class="cat">off_by_one</span><span class="ln">line 5</span></div>
-          <div class="issue-title">Loop starts at index 1 — possible off-by-one</div>
-          <div class="issue-expl">range(1, n-1) skips index 0. The trapezoidal rule should integrate over every interval — drops the first interval, silently wrong.</div>
+          <div class="issue-meta"><span class="sev">${ex.audit.card.sev}</span><span class="cat">${ex.audit.card.cat}</span><span class="ln">line ${ex.audit.card.line}</span></div>
+          <div class="issue-title">${ex.audit.card.title}</div>
+          <div class="issue-expl">${ex.audit.card.expl}</div>
         </div>`);
-      setStage('audit', 'done');
-      await sleep(500);
+      setStage('audit', 'done'); await sleep(450);
 
-      // 02 FIX
+      // FIX
       setStage('fix', 'active');
-      setNarration('Now it rewrites — only the bug changes, nothing else.');
-      const fix = appendResult('<div class="stage-label">02 · Fix</div><div class="prog"></div>');
-      await streamProgress(fix.querySelector('.prog'), ['identifying target function', 'generating minimal rewrite'], 320);
-      fix.insertAdjacentHTML('beforeend', `
-        <div class="diff">
-          <span class="dl del">    for i in range(1, n - 1):  # off-by-one</span>
-          <span class="dl add">    for i in range(0, n - 1):</span>
-        </div>`);
-      setStage('fix', 'done');
-      await sleep(500);
+      setNarration(ex.fix.narration);
+      const f = appendResult('<div class="stage-label">02 · Fix</div><div class="prog"></div>');
+      await streamProgress(f.querySelector('.prog'), ex.fix.progress, 300);
+      const diffHtml = ex.fix.diff.map(d =>
+        `<span class="dl del">${d.del.replace(/</g,'&lt;')}</span><span class="dl add">${d.add.replace(/</g,'&lt;')}</span>`
+      ).join('');
+      f.insertAdjacentHTML('beforeend', `<div class="diff">${diffHtml}</div>`);
+      setStage('fix', 'done'); await sleep(450);
 
-      // 03 VERIFY
+      // VERIFY
       setStage('verify', 'active');
-      setNarration('Both versions run in sandboxes on synthesized inputs. Numerical agreement check.');
-      const ver = appendResult('<div class="stage-label">03 · Verify</div><div class="prog"></div>');
-      await streamProgress(ver.querySelector('.prog'), ['synthesizing 12 inputs', 'sandbox A: original', 'sandbox B: fix', 'numpy.allclose comparison'], 360);
-      ver.insertAdjacentHTML('beforeend', `
-        <table class="vt"><thead><tr><th>#</th><th>input</th><th>orig</th><th>fix</th><th>agree</th></tr></thead><tbody id="vbody"></tbody></table>
-        <div class="verdict" id="vbanner"><span>Fix changes behavior on 8 / 12 inputs · bug confirmed</span><span class="note">Disagreement is the bug. Cases 3, 7, 8, 9 hit edges where the bug doesn't fire.</span></div>`);
-      const rows = [
-        ['1','[0.0, 0.5, 1.0, 1.5, 2.0]','1.875','2.000', false],
-        ['2','[1.0, 1.0, 1.0, 1.0]','2.000','3.000', false],
-        ['3','[0.0, 0.0, 0.0]','0.000','0.000', true],
-        ['4','[2.0, 4.0, 6.0, 8.0]','14.00','20.00', false],
-        ['5','[1e-9, 1e-9, 1e-9]','1e-9','2e-9', false],
-        ['6','[100, 200, 300]','300.0','500.0', false],
-        ['7','[]','ValueError','ValueError', true],
-        ['8','[3.14]','0.000','0.000', true],
-        ['9','[-1, 1, -1, 1]','0.000','0.000', true],
-        ['10','[1.0, 2.0]','0.000','1.500', false],
-        ['11','[0.5, 1.5, 2.5, 3.5]','4.000','6.000', false],
-        ['12','[1e6, 2e6, 3e6]','2.5e6','4.5e6', false],
-      ];
-      const vbody = document.getElementById('vbody');
-      for (let i = 0; i < rows.length; i++) {
-        const [n,inp,o,f,ag] = rows[i];
+      setNarration(ex.verify.narration);
+      const v = appendResult('<div class="stage-label">03 · Verify</div><div class="prog"></div>');
+      await streamProgress(v.querySelector('.prog'), ex.verify.progress, 320);
+      v.insertAdjacentHTML('beforeend', `
+        <table class="vt"><thead><tr><th>#</th><th>input</th><th>orig</th><th>fix</th><th>agree</th></tr></thead><tbody class="vbody"></tbody></table>
+        <div class="verdict vbanner"><span>${ex.verify.banner}</span><span class="note">${ex.verify.note}</span></div>`);
+      const vbody = v.querySelector('.vbody');
+      for (let i = 0; i < ex.verify.rows.length; i++) {
+        const [n,inp,o,fv,ag] = ex.verify.rows[i];
         const tr = document.createElement('tr');
-        tr.style.animationDelay = (i * 80) + 'ms';
-        tr.innerHTML = `<td>${n}</td><td>${inp}</td><td>${o}</td><td>${f}</td>${ag?'<td class="ok">✓</td>':'<td class="no">✗</td>'}`;
+        tr.style.animationDelay = (i * 60) + 'ms';
+        tr.innerHTML = `<td>${n}</td><td>${inp}</td><td>${o}</td><td>${fv}</td>${ag?'<td class="ok">✓</td>':'<td class="no">✗</td>'}`;
         vbody.appendChild(tr);
-        await sleep(80);
+        results.scrollTop = results.scrollHeight;
+        await sleep(60);
       }
-      await sleep(200);
-      document.getElementById('vbanner').classList.add('in');
-      setStage('verify', 'done');
-      await sleep(600);
+      await sleep(180);
+      v.querySelector('.vbanner').classList.add('in');
+      setStage('verify', 'done'); await sleep(500);
 
-      // 04 ROUTE
+      // ROUTE
       setStage('route', 'active');
-      setNarration('Now the part that matters — where should this run?');
-      const rt = appendResult('<div class="stage-label">04 · Route</div><div class="prog"></div>');
-      await streamProgress(rt.querySelector('.prog'), ['scanning hot blocks', 'classical: GPU pattern matching', 'quantum: amplitude estimation candidate'], 380);
-      rt.insertAdjacentHTML('beforeend', `
-        <div class="route-grid">
+      setNarration(ex.route.narration);
+      const r = appendResult('<div class="stage-label">04 · Route</div><div class="prog"></div>');
+      await streamProgress(r.querySelector('.prog'), ex.route.progress, 340);
+      let routeHtml = '';
+      if (ex.route.gpu || ex.route.quantum) {
+        routeHtml = '<div class="route-grid">';
+        if (ex.route.gpu) routeHtml += `
           <div class="route-card">
-            <div class="route-tag"><span class="pat">CLASSICAL · GPU</span><span class="speedup">~10×</span></div>
-            <div class="route-rationale">Numeric reduction loop. Vectorize with np.trapz, or move to GPU for n &gt; 10⁶. Engineering: low.</div>
-          </div>
+            <div class="route-tag"><span class="pat">CLASSICAL · GPU</span><span class="speedup">${ex.route.gpu.speedup}</span></div>
+            <div class="route-rationale">${ex.route.gpu.rationale}</div>
+          </div>`;
+        if (ex.route.quantum) routeHtml += `
           <div class="route-card q">
-            <div class="route-tag"><span class="pat">QUANTUM · QAE</span><span class="speedup">~quadratic</span></div>
-            <div class="route-rationale">Numerical integration is a textbook quantum amplitude estimation target. ~√N speedup at large sample counts. Worth it for n &gt; 10⁹. Hardware: IBM, IonQ, Quantinuum.</div>
-          </div>
-        </div>`);
+            <div class="route-tag"><span class="pat">QUANTUM · QAE</span><span class="speedup">${ex.route.quantum.speedup}</span></div>
+            <div class="route-rationale">${ex.route.quantum.rationale}</div>
+          </div>`;
+        routeHtml += '</div>';
+      } else {
+        routeHtml = `<div style="padding:.75rem;background:rgba(110,119,135,0.05);border-left:2px solid var(--dim);font-size:13px;color:var(--dim);font-style:italic;">${ex.route.empty}</div>`;
+      }
+      r.insertAdjacentHTML('beforeend', routeHtml);
       setStage('route', 'done');
-      setNarration('Done. Audit → fix → verify → route. Right code, right hardware.');
+      setNarration(ex.closing);
+      await sleep(1500);
     }
 
-    // start demo on load (slight delay so reveal feels intentional)
-    setTimeout(runDemo, 900);
+    async function runAllExamples() {
+      for (let i = 0; i < examples.length; i++) {
+        await runExample(examples[i], i, examples.length);
+        if (i < examples.length - 1) {
+          // brief transition
+          setNarration('Next bug, different shape →');
+          await sleep(1100);
+        }
+      }
+      // After all done — invite to try own
+      setNarration('Your turn. Drop or paste your own scientific Python.');
+      const startBtn = document.getElementById('startBtn');
+      startBtn.classList.add('pulse');
+      startBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    setTimeout(runAllExamples, 900);
 
     // ============= Start now CTA =============
     document.getElementById('startBtn').addEventListener('click', () => {
       const trySection = document.getElementById('trySection');
       trySection.classList.add('open');
+      document.getElementById('startBtn').classList.remove('pulse');
       bindHover();
       setTimeout(() => {
         document.getElementById('userCode').focus();
@@ -1049,7 +1206,7 @@
         const data = await res.json();
         const findings = data.findings || [];
         if (findings.length === 0) {
-          tryResults.innerHTML = `<div style="color:var(--right);font-size:12px;">✓ No static issues found in ${data.elapsed_ms?.toFixed(1)}ms.</div>
+          tryResults.innerHTML = `<div style="color:var(--right);font-size:14px;">✓ No static issues found in ${data.elapsed_ms?.toFixed(1)}ms.</div>
             <div class="small">For deeper analysis (LLM audit, fix, verify, GPU/quantum routing), install the MCP server.</div>`;
         } else {
           tryResults.innerHTML = findings.map(f => `
@@ -1062,7 +1219,7 @@
         }
         tryStatus.textContent = 'done';
       } catch (e) {
-        tryResults.innerHTML = `<div style="color:var(--wrong);font-size:12px;">Backend error: ${e.message}</div>
+        tryResults.innerHTML = `<div style="color:var(--wrong);font-size:14px;">Backend error: ${e.message}</div>
           <div class="small">The backend may be cold-starting. Try again in a few seconds, or install the MCP server to run locally.</div>`;
         tryStatus.textContent = 'error';
       } finally {
@@ -1133,7 +1290,7 @@
         const session = await res.json();
         window.location.href = `/app/session/?id=${encodeURIComponent(session.id)}`;
       } catch (e) {
-        tryResults.innerHTML = `<div style="color:var(--wrong);font-size:12px;">Backend error: ${e.message}</div>
+        tryResults.innerHTML = `<div style="color:var(--wrong);font-size:14px;">Backend error: ${e.message}</div>
           <div class="small">Try the quick audit, or install the MCP server to run locally.</div>`;
         tryStatus.textContent = 'error';
         fullBtn.disabled = false;

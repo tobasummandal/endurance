@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .api import audit, fix, live, route, sessions, verify
 from .db import init_db
@@ -25,14 +28,21 @@ app.add_middleware(
 
 app.add_exception_handler(HeliosError, helios_error_handler)
 
-app.include_router(sessions.router)
-app.include_router(audit.router)
-app.include_router(fix.router)
-app.include_router(verify.router)
-app.include_router(route.router)
-app.include_router(live.router)
+API_PREFIX = "/api"
+app.include_router(sessions.router, prefix=API_PREFIX)
+app.include_router(audit.router, prefix=API_PREFIX)
+app.include_router(fix.router, prefix=API_PREFIX)
+app.include_router(verify.router, prefix=API_PREFIX)
+app.include_router(route.router, prefix=API_PREFIX)
+app.include_router(live.router, prefix=API_PREFIX)
 
 
 @app.get("/health")
 def health() -> dict:
     return {"ok": True}
+
+
+# Static frontend — must be mounted LAST so /api/* and /health win route precedence.
+WEB_DIR = Path(__file__).resolve().parent.parent.parent / "web"
+if WEB_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")

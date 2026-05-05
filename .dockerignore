@@ -1,0 +1,17 @@
+.git
+.gitignore
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/*.egg-info
+backend/helios.db
+backend/tests
+backend/Dockerfile
+backend/docker-compose.yml
+.venv
+venv
+node_modules
+.DS_Store
+*.md
+!web/**

@@ -61,7 +61,7 @@ export default function IssueList({ issues, selectedId, onSelect, onGenerateFix 
             <div style={{ fontFamily: 'var(--serif)', fontSize: 18, fontStyle: 'italic', marginBottom: '0.5rem', lineHeight: 1.3 }}>
               {iss.title}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--fg)', lineHeight: 1.6, opacity: 0.85 }}>{iss.explanation}</div>
+            <div style={{ fontFamily: 'var(--prose)', fontSize: 14, color: 'var(--fg)', lineHeight: 1.6, opacity: 0.9, letterSpacing: '-0.01em' }}>{iss.explanation}</div>
             {onGenerateFix && (
               <button
                 className="helios-btn"

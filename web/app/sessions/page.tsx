@@ -23,8 +23,8 @@ export default function SessionsPage() {
         </h1>
       </Reveal>
       <Reveal delay={2}>
-        <p style={{ fontSize: 14, color: 'var(--dim)', maxWidth: 640, lineHeight: 1.7, marginBottom: '3rem' }}>
-          Every audit, fix, and verification is persisted. The dataset is the company.
+        <p style={{ fontFamily: 'var(--prose)', fontWeight: 300, fontSize: 15, color: 'var(--fg)', opacity: 0.85, maxWidth: 640, lineHeight: 1.6, letterSpacing: '-0.01em', marginBottom: '3rem' }}>
+          Every session writes one row to the dataset of <em>(broken, fixed, proven)</em>. Nobody else has it.
         </p>
       </Reveal>
 

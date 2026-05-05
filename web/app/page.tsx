@@ -47,9 +47,9 @@ export default function ReviewerHome() {
         </h1>
       </Reveal>
       <Reveal delay={2}>
-        <p style={{ fontSize: 16, color: 'var(--dim)', maxWidth: 640, lineHeight: 1.7, marginBottom: '3rem' }}>
-          Drop a Python file or paste code below. Helios runs four stages: static + LLM audit, fix generation, sandboxed verification,
-          and hardware routing.
+        <p style={{ fontFamily: 'var(--prose)', fontWeight: 300, fontSize: 17, color: 'var(--fg)', opacity: 0.9, maxWidth: 640, lineHeight: 1.6, letterSpacing: '-0.01em', marginBottom: '3rem' }}>
+          Drop a Python file or paste code below. Helios catches the silent bugs &mdash; off-by-one, unit mismatch, numerical
+          instability &mdash; rewrites them, proves the fix on sandboxed test cases, and flags GPU candidates. Three jobs, one tool.
         </p>
       </Reveal>
 

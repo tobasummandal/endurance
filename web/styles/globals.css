@@ -14,6 +14,7 @@
   --right: #7FE0E0;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
   --serif: 'Fraunces', Georgia, serif;
+  --prose: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

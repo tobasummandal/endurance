@@ -1,13 +1,25 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session as DBSession
 
 from ..analysis.route_classifier import classify
+from ..analysis.quantum_router import run as run_quantum_router
 from ..db import get_session
 from ..errors import HeliosError
 from ..models import RouteResult, Session
 from ..schemas import RouteCandidate, RouteResultOut
 
 router = APIRouter()
+
+
+@router.get("/quantum-router")
+def quantum_router(eta: float = Query(5.0, ge=1.0, le=100.0)) -> dict:
+    """Hybrid Immune-filter -> ATC scheduler demo. Pure deterministic fixture.
+
+    Independent of any session — drives the live demo panel. Returns FIFO
+    baseline schedule, ATC schedule across CPU+QPU lanes, immune-filter
+    rejections, ATC priority queue, and a sensitivity sweep over eta.
+    """
+    return run_quantum_router(eta=eta)
 
 
 @router.post("/sessions/{session_id}/route", response_model=RouteResultOut)

@@ -19,6 +19,7 @@ export type IssueCategory =
   | 'numerical_instability'
   | 'float_equality'
   | 'mutable_default'
+  | 'module_state'
   | 'bare_except'
   | 'shape_assumption'
   | 'boundary_condition'
@@ -92,4 +93,77 @@ export type RouteResult = {
   gpu_candidates: RouteCandidate[];
   quantum_candidates: never[];
   created_at: string;
+};
+
+// ---- Quantum router (hybrid Immune-filter -> ATC scheduler) demo ----
+
+export type QuantumAntigen = 'qaoa' | 'vqe' | 'grover' | 'qft' | 'classical';
+export type QuantumLane = 'cpu' | 'qpu';
+
+export type QuantumTask = {
+  id: string;
+  name: string;
+  antigen: QuantumAntigen;
+  affinity: number;
+  p_classical: number;
+  weight: number;
+  due_s: number;
+  p_quantum: number | null;
+};
+
+export type QuantumScheduleEntry = {
+  task_id: string;
+  name: string;
+  lane: QuantumLane;
+  start: number;
+  end: number;
+  antigen: QuantumAntigen;
+  p?: number;
+};
+
+export type QuantumPriorityEntry = {
+  task_id: string;
+  name: string;
+  antigen: QuantumAntigen;
+  lane: QuantumLane;
+  pi: number;
+  p: number;
+};
+
+export type QuantumRejected = {
+  task_id: string;
+  name: string;
+  antigen: QuantumAntigen;
+  affinity: number;
+  reason: string;
+};
+
+export type QuantumSensitivityPoint = {
+  eta: number;
+  atc_total_s: number;
+  reduction_pct: number;
+};
+
+export type QuantumRouterResult = {
+  params: {
+    k: number;
+    threshold: number;
+    qpu_overhead_s: number;
+    eta: number;
+    n_tasks: number;
+  };
+  tasks: QuantumTask[];
+  fifo: { total_s: number; schedule: QuantumScheduleEntry[] };
+  atc: {
+    total_s: number;
+    cpu_load_s: number;
+    qpu_load_s: number;
+    cpu_schedule: QuantumScheduleEntry[];
+    qpu_schedule: QuantumScheduleEntry[];
+    priority_queue: QuantumPriorityEntry[];
+    rejected: QuantumRejected[];
+    reduction_pct: number;
+  };
+  sensitivity: QuantumSensitivityPoint[];
+  target_pct: number;
 };

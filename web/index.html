@@ -949,7 +949,7 @@
     <section>
       <div class="section-tag reveal">Run it</div>
       <h2 class="reveal">Real code.<br>Real bug. <em>Caught in twelve seconds.</em></h2>
-      <p class="lead reveal delay-1" style="margin-top: 1rem;">Four scientific Python files. Three silent bugs and one hot loop. Each runs the actual four-stage pipeline against your live backend. No setup, no signup. The integrate.py off-by-one is the same shape as a bug that was published, ran for six years, and changed a paper&rsquo;s conclusion.</p>
+      <p class="lead reveal delay-1" style="margin-top: 1rem;">Five scientific Python files. Three silent bugs, one hot loop, one shared-state refactor. Each runs the actual four-stage pipeline against your live backend. No setup, no signup. The integrate.py off-by-one is the same shape as a bug that was published, ran for six years, and changed a paper&rsquo;s conclusion.</p>
 
       <div class="sandbox reveal delay-2">
         <div class="sandbox-tabs" id="tabs">
@@ -968,6 +968,10 @@
           <button class="sandbox-tab" data-ex="distances">
             distances.py
             <span class="tag">GPU candidate</span>
+          </button>
+          <button class="sandbox-tab" data-ex="predictor">
+            predictor.py
+            <span class="tag">module state</span>
           </button>
         </div>
 
@@ -1497,6 +1501,44 @@ def pairwise_distances(X):
           { html: '                s += (X[i][k] - X[j][k]) ** <span class="num">2</span>' },
           { html: '            D[i][j] = s ** <span class="num">0.5</span>' },
           { html: '    <span class="kw">return</span> D' },
+        ],
+      },
+
+      predictor: {
+        filename: 'predictor.py',
+        lines: '14 lines',
+        source: `# predictor.py — memoized scoring with implicit shared cache
+_cache = {}
+_calls = 0
+
+def score(x):
+    global _calls
+    _calls += 1
+    if x in _cache:
+        return _cache[x]
+    result = (x * 1.7 + 3.2) ** 0.5
+    _cache[x] = result
+    return result
+
+def reset():
+    _cache.clear()
+`,
+        code: [
+          { html: '<span class="cm"># predictor.py — memoized scoring with implicit shared cache</span>' },
+          { html: '_cache = {}', cls: 'bug' },
+          { html: '_calls = <span class="num">0</span>', cls: 'bug' },
+          { html: '' },
+          { html: '<span class="kw">def</span> <span class="fn">score</span>(x):' },
+          { html: '    <span class="kw">global</span> _calls' },
+          { html: '    _calls += <span class="num">1</span>' },
+          { html: '    <span class="kw">if</span> x <span class="kw">in</span> _cache:' },
+          { html: '        <span class="kw">return</span> _cache[x]' },
+          { html: '    result = (x * <span class="num">1.7</span> + <span class="num">3.2</span>) ** <span class="num">0.5</span>' },
+          { html: '    _cache[x] = result' },
+          { html: '    <span class="kw">return</span> result' },
+          { html: '' },
+          { html: '<span class="kw">def</span> <span class="fn">reset</span>():' },
+          { html: '    _cache.clear()' },
         ],
       },
     };

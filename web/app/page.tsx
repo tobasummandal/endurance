@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Reveal from '@/components/Reveal';
@@ -55,6 +56,12 @@ export default function ReviewerHome() {
 
       <Reveal delay={2}>
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <Link className="helios-btn primary" href="/demo" style={{ textDecoration: 'none' }}>
+            ▶ Try the demo
+          </Link>
+          <Link className="helios-btn" href="/live" style={{ textDecoration: 'none' }}>
+            ⚡ Live coding
+          </Link>
           <button className="helios-btn primary" disabled={loading} onClick={() => fileInputRef.current?.click()}>
             {loading ? '◉ Creating session…' : '↑ Drop a .py file'}
           </button>

@@ -1,0 +1,35 @@
+You are refactoring a Python source file to encapsulate module-level mutable state into a class. This is a STRUCTURAL refactor, not a bug-fix — the goal is to remove implicit shared state, not to change algorithms.
+
+THE ISSUE:
+  category: {category}
+  lines: {line_start}-{line_end}
+  title: {title}
+  explanation: {explanation}
+
+REFACTOR RULES (follow ALL of them):
+  1. Identify every module-level mutable global named in the issue (and any closely related ones).
+  2. Move that state into a new class. Class name: a CamelCase noun derived from the file's purpose
+     (e.g. `Predictor`, `Cache`, `Simulation`, `History`).
+  3. Each function that reads OR mutates the moved globals becomes a method of the class. Methods take
+     `self` as the first argument; preserve all other parameters and their order.
+  4. Initialize all moved state inside `__init__`. Do not retain the module-level globals.
+  5. PRESERVE THE PUBLIC INTERFACE so existing callers can still work:
+       - For each refactored top-level function, leave a thin module-level shim with the SAME
+         signature that delegates to a singleton instance (or to a default instance you create).
+       - Example: if `predict(x)` was a top-level function, after refactor it should still exist
+         as `def predict(x): return _default.predict(x)` with `_default = Predictor()` defined once.
+  6. Do not change unrelated code: imports, comments, docstrings, other functions stay byte-identical.
+  7. Do not rename arguments or change behavior. Numerical operations must produce the same outputs
+     for the same inputs (modulo the bug being fixed by removing shared state).
+
+Return strict JSON with exactly two keys:
+  "fixed_code"    — the FULL contents of the file after the refactor
+  "diff_summary"  — one short sentence describing the encapsulation (e.g. "Wrapped shared cache in a Predictor class with per-instance state")
+
+Return ONLY the JSON object. No prose, no markdown fence.
+
+ORIGINAL FILE: {filename}
+
+```python
+{source_code}
+```

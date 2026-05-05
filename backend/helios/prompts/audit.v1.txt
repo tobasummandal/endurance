@@ -8,12 +8,13 @@ Focus on:
 - Wrong array shape assumptions (treating a (N,) as (N,1), implicit broadcasting bugs)
 - Mis-applied boundary conditions (Dirichlet vs Neumann, periodic vs reflecting)
 - Mutable default args holding state across calls
+- Module-level mutable globals (caches, history lists, registries) shared across functions — implicit shared state breaks reproducibility and causes test-order-dependent failures
 - Bare except: swallowing numerical errors
 
 Do NOT flag style issues, missing type hints, or non-bugs.
 
 Return a strict JSON array. Each element MUST have these keys exactly:
-  "category"     — one of: off_by_one, unit_mismatch, numerical_instability, float_equality, mutable_default, bare_except, shape_assumption, boundary_condition, other
+  "category"     — one of: off_by_one, unit_mismatch, numerical_instability, float_equality, mutable_default, module_state, bare_except, shape_assumption, boundary_condition, other
   "severity"     — one of: low, medium, high, critical
   "line_start"   — 1-indexed integer
   "line_end"     — 1-indexed integer (>= line_start)

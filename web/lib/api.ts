@@ -1,4 +1,4 @@
-import type { Fix, Issue, RouteResult, Session, Verification } from './types';
+import type { Fix, Issue, QuantumRouterResult, RouteResult, Session, Verification } from './types';
 
 const API_BASE = '/api';
 
@@ -44,6 +44,9 @@ export const api = {
 
   route: (sessionId: string) =>
     request<RouteResult>(`/sessions/${sessionId}/route`, { method: 'POST' }),
+
+  quantumRouter: (eta: number) =>
+    request<QuantumRouterResult>(`/quantum-router?eta=${eta}`),
 };
 
 // LCS-based line diff for visual rendering

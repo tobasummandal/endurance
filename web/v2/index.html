@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HELIOS — quantum-aware optimizer for scientific code</title>
+  <meta name="description" content="Audit, fix, verify, and route scientific Python across CPU, GPU, and quantum hardware." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090d;
+      --bg-1: #0c1118;
+      --fg: #f3ece0;
+      --dim: #6e7787;
+      --line: #1a2230;
+      --sun: #E8A33D;
+      --sun-warm: #f4c46b;
+      --wrong: #E94F37;
+      --right: #7FE0E0;
+      --quantum: #c08aff;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --serif: 'Fraunces', Georgia, serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--mono);
+      font-weight: 300;
+      overflow-x: hidden;
+      cursor: none;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+    @media (pointer: coarse) {
+      html, body { cursor: auto; }
+      .cursor-ring, .cursor-dot { display: none !important; }
+    }
+    .cursor-ring, .cursor-dot {
+      position: fixed; pointer-events: none; z-index: 9999;
+      transform: translate(-50%, -50%); mix-blend-mode: difference;
+    }
+    .cursor-ring {
+      width: 28px; height: 28px;
+      border: 1px solid var(--fg); border-radius: 50%;
+      transition: width .25s ease, height .25s ease, border-color .25s ease;
+    }
+    .cursor-dot { width: 4px; height: 4px; background: var(--sun); border-radius: 50%; }
+    .cursor-ring.hot { width: 56px; height: 56px; border-color: var(--sun); }
+
+    canvas#bg { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; display: block; }
+
+    /* ---- top-left header (small, fixed) ---- */
+    .header {
+      position: fixed;
+      top: 1.25rem; left: 1.5rem;
+      z-index: 100;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      gap: 1ch;
+      mix-blend-mode: difference;
+    }
+    .header .brand {
+      color: var(--fg);
+      font-weight: 600;
+      letter-spacing: 0.3em;
+    }
+    .header .sep { color: var(--sun); }
+    .header .slogan { color: var(--dim); font-weight: 400; text-transform: none; letter-spacing: 0.05em; font-size: 10.5px; }
+
+    main { position: relative; z-index: 1; }
+
+    /* ---- demo section (above the fold) ---- */
+    .demo-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 5.5rem 5vw 2rem;
+    }
+    .stage-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      margin-bottom: 1px;
+    }
+    .stage-pill {
+      padding: 1rem 1rem;
+      background: var(--bg);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      gap: .75ch;
+      transition: color .3s, background .3s;
+    }
+    .stage-pill .num {
+      color: var(--line);
+      font-variant-numeric: tabular-nums;
+      transition: color .3s;
+    }
+    .stage-pill .dot {
+      width: 6px; height: 6px;
+      background: var(--line);
+      border-radius: 50%;
+      margin-left: auto;
+      transition: background .3s, box-shadow .3s;
+    }
+    .stage-pill.active { color: var(--fg); background: rgba(232,163,61,0.06); }
+    .stage-pill.active .num { color: var(--sun); }
+    .stage-pill.active .dot { background: var(--sun); box-shadow: 0 0 12px var(--sun); animation: pulse 1.2s ease-in-out infinite; }
+    .stage-pill.done { color: var(--fg); }
+    .stage-pill.done .num { color: var(--right); }
+    .stage-pill.done .dot { background: var(--right); }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+
+    .demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--line);
+      background: rgba(7,9,13,0.7);
+      backdrop-filter: blur(8px);
+      min-height: 540px;
+    }
+    .pane { display: flex; flex-direction: column; min-width: 0; }
+    .pane-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .85rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .pane-head .filename {
+      color: var(--fg);
+      display: flex; align-items: center; gap: 1ch;
+    }
+    .pane-head .filename::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--sun);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--sun);
+    }
+    .editor { border-right: 1px solid var(--line); }
+    .editor-body {
+      flex: 1;
+      padding: 1.25rem 0;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.85;
+    }
+    .code-line {
+      display: block;
+      padding: 0 1.25rem;
+      color: var(--dim);
+      white-space: pre;
+      transition: background .25s;
+    }
+    .code-line .ln {
+      display: inline-block;
+      width: 3ch; color: var(--line);
+      user-select: none;
+      margin-right: 1.25ch;
+    }
+    .code-line.bug { background: rgba(233,79,55,0.10); color: var(--fg); position: relative; }
+    .code-line.bug::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 3px; height: 100%; background: var(--wrong);
+    }
+    .kw { color: #c08aff; }
+    .fn { color: #f4c46b; }
+    .nm { color: #7FE0E0; }
+    .cm { color: #5a6378; font-style: italic; }
+
+    .results {
+      background: rgba(12,17,24,0.4);
+      max-height: 540px;
+      overflow-y: auto;
+    }
+    .results .pane-head .narration {
+      color: var(--fg);
+      text-transform: none;
+      letter-spacing: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 13px;
+      transition: opacity .3s;
+    }
+    .stage-result {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .5s, transform .5s;
+    }
+    .stage-result.in { opacity: 1; transform: translateY(0); }
+    .stage-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--sun);
+      margin-bottom: .5rem;
+    }
+    .progress-line {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .progress-line.in { opacity: 1; }
+    .progress-line::before { content: '› '; color: var(--sun); }
+
+    .issue-card {
+      padding: .75rem;
+      background: rgba(233,79,55,0.06);
+      border-left: 2px solid var(--wrong);
+      margin-top: .5rem;
+    }
+    .issue-meta {
+      display: flex; gap: .75rem;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: .35rem;
+    }
+    .issue-meta .sev { color: var(--wrong); font-weight: 600; }
+    .issue-meta .cat { color: var(--dim); }
+    .issue-meta .ln { color: var(--sun); margin-left: auto; }
+    .issue-title { color: var(--fg); font-size: 13px; margin-bottom: .25rem; font-weight: 500; }
+    .issue-expl { color: var(--dim); font-size: 11px; line-height: 1.6; }
+
+    .diff {
+      margin-top: .5rem;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      background: var(--bg);
+      border: 1px solid var(--line);
+    }
+    .dl { display: block; padding: 0 .75rem; white-space: pre; }
+    .dl.del { background: rgba(233,79,55,0.10); color: var(--wrong); }
+    .dl.add { background: rgba(127,224,224,0.08); color: var(--right); }
+    .dl.del::before { content: '- '; opacity: .7; }
+    .dl.add::before { content: '+ '; opacity: .7; }
+
+    .vt { width: 100%; font-family: var(--mono); font-size: 11px; border-collapse: collapse; margin-top: .5rem; }
+    .vt th { text-align: left; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); padding: .25rem .4rem; border-bottom: 1px solid var(--line); font-weight: 500; }
+    .vt td { padding: .2rem .4rem; border-bottom: 1px solid rgba(26,34,48,0.5); color: var(--fg); }
+    .vt td.ok { color: var(--right); }
+    .vt td.no { color: var(--wrong); }
+    .vt tr { opacity: 0; transform: translateX(-6px); animation: rowin .3s ease forwards; }
+    @keyframes rowin { to { opacity: 1; transform: translateX(0); } }
+    .verdict {
+      margin-top: .5rem;
+      padding: .55rem .75rem;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: rgba(232,163,61,0.06);
+      border-left: 2px solid var(--sun);
+      color: var(--sun);
+      opacity: 0;
+      transition: opacity .4s;
+    }
+    .verdict.in { opacity: 1; }
+    .verdict .note { color: var(--dim); font-size: 10px; letter-spacing: 0.05em; text-transform: none; font-style: italic; display: block; margin-top: .3rem; }
+
+    .route-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      margin-top: .5rem;
+    }
+    .route-card {
+      padding: .75rem;
+      background: rgba(232,163,61,0.04);
+      border-left: 2px solid var(--sun);
+    }
+    .route-card.q { background: rgba(192,138,255,0.06); border-left-color: var(--quantum); }
+    .route-tag {
+      display: flex; gap: .5rem; align-items: baseline;
+      font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--dim); margin-bottom: .35rem;
+    }
+    .route-tag .pat { color: var(--sun); font-weight: 600; }
+    .route-card.q .route-tag .pat { color: var(--quantum); }
+    .route-tag .speedup { margin-left: auto; color: var(--right); }
+    .route-card.q .route-tag .speedup { color: var(--quantum); }
+    .route-rationale { font-size: 11px; line-height: 1.6; color: var(--fg); opacity: .85; }
+
+    /* ---- CTA section ---- */
+    .cta-section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 3rem 5vw 1.5rem;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
+    .start-btn {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--sun);
+      padding: 1.1rem 2.25rem;
+      border: none;
+      cursor: none;
+      font-weight: 600;
+      transition: background .2s, transform .15s, letter-spacing .25s;
+      display: inline-flex;
+      align-items: center;
+      gap: 1ch;
+    }
+    .start-btn:hover { background: var(--sun-warm); transform: translateY(-2px); letter-spacing: 0.36em; }
+    .waitlist {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 0.05em;
+    }
+    .waitlist input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--line);
+      padding: .5rem .25rem;
+      color: var(--fg);
+      font-family: var(--mono);
+      font-size: 12px;
+      width: 240px;
+      transition: border-color .3s;
+      cursor: none;
+    }
+    .waitlist input:focus { outline: none; border-bottom-color: var(--sun); }
+    .waitlist input::placeholder { color: var(--line); }
+    .waitlist button {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: .55rem .9rem;
+      cursor: none;
+      transition: border-color .2s, color .2s;
+    }
+    .waitlist button:hover { border-color: var(--sun); color: var(--sun); }
+    .waitlist .label { white-space: nowrap; }
+    .waitlist .ack { color: var(--right); font-style: italic; opacity: 0; transition: opacity .3s; }
+    .waitlist .ack.in { opacity: 1; }
+
+    /* ---- try your own (revealed by Start) ---- */
+    .try-section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 5vw;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .6s ease, padding .6s ease;
+    }
+    .try-section.open { max-height: 800px; padding: 1.5rem 5vw 2rem; }
+    .try-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .try-pane {
+      border: 1px solid var(--line);
+      background: rgba(7,9,13,0.7);
+      padding: 1.25rem;
+    }
+    .try-pane h3 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--sun);
+      margin-bottom: .75rem;
+    }
+    .try-pane textarea {
+      width: 100%;
+      height: 220px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--line);
+      padding: .75rem;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.6;
+      resize: vertical;
+      cursor: none;
+    }
+    .try-pane textarea:focus { outline: none; border-color: var(--sun); }
+    .try-actions { display: flex; gap: .75rem; margin-top: .75rem; align-items: center; }
+    .try-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--sun);
+      padding: .65rem 1.25rem;
+      border: none; cursor: none;
+      font-weight: 500;
+      transition: background .2s;
+    }
+    .try-btn:hover { background: var(--sun-warm); }
+    .try-btn:disabled { opacity: .4; }
+    .try-status { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--dim); text-transform: uppercase; }
+    .try-results {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .try-results .empty { color: var(--dim); font-style: italic; font-size: 11px; }
+    .try-results .install {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: .75rem 1rem;
+      margin-top: .5rem;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--right);
+      white-space: pre;
+      overflow-x: auto;
+      position: relative;
+    }
+    .try-results .install .copy {
+      position: absolute;
+      top: .5rem; right: .5rem;
+      font-size: 9px;
+      color: var(--dim);
+      background: var(--bg-1);
+      padding: .25rem .5rem;
+      border: 1px solid var(--line);
+      cursor: none;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .try-results .install .copy:hover { color: var(--sun); border-color: var(--sun); }
+    .try-results .small {
+      font-size: 10.5px;
+      color: var(--dim);
+      margin-top: .5rem;
+      line-height: 1.6;
+    }
+
+    /* ---- info text below ---- */
+    .info {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 4rem 5vw 5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 3rem;
+      border-top: 1px solid var(--line);
+    }
+    .info-col h4 {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--sun);
+      margin-bottom: .75rem;
+    }
+    .info-col p {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--fg);
+      line-height: 1.7;
+      opacity: .82;
+    }
+    .info-col p + p { margin-top: .75rem; }
+    .info-col .quantum-tag {
+      color: var(--quantum); font-weight: 500;
+    }
+    footer {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem 5vw 2rem;
+      border-top: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 900px) {
+      .demo, .try-grid, .info, .cta-section { grid-template-columns: 1fr; }
+      .editor { border-right: none; border-bottom: 1px solid var(--line); }
+      .stage-bar { grid-template-columns: repeat(2, 1fr); }
+      .header .slogan { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg"></canvas>
+  <div class="cursor-ring" id="ring"></div>
+  <div class="cursor-dot" id="dot"></div>
+
+  <header class="header">
+    <span class="brand">HELIOS</span>
+    <span class="sep">·</span>
+    <span class="slogan">quantum-aware optimizer for scientific code</span>
+  </header>
+
+  <main>
+
+    <!-- DEMO -->
+    <section class="demo-wrap">
+      <div class="stage-bar" id="stageBar">
+        <div class="stage-pill" data-stage="audit"><span class="num">01</span><span>Audit</span><span class="dot"></span></div>
+        <div class="stage-pill" data-stage="fix"><span class="num">02</span><span>Fix</span><span class="dot"></span></div>
+        <div class="stage-pill" data-stage="verify"><span class="num">03</span><span>Verify</span><span class="dot"></span></div>
+        <div class="stage-pill" data-stage="route"><span class="num">04</span><span>Route</span><span class="dot"></span></div>
+      </div>
+
+      <div class="demo">
+        <div class="pane editor">
+          <div class="pane-head">
+            <span class="filename">integrate.py</span>
+            <span>Python · scientific</span>
+          </div>
+          <div class="editor-body" id="editor"></div>
+        </div>
+        <div class="pane results">
+          <div class="pane-head">
+            <span class="narration" id="narration">Watching helios audit, fix, verify, and route a real scientific bug.</span>
+          </div>
+          <div id="results"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <button class="start-btn" id="startBtn">▶ Start now</button>
+      <div class="waitlist">
+        <span class="label">Waitlist for hosted Helios:</span>
+        <input id="email" type="email" placeholder="you@lab.edu" />
+        <button id="emailBtn">Join</button>
+        <span class="ack" id="ack">✓ saved</span>
+      </div>
+    </section>
+
+    <!-- TRY YOUR OWN + INSTALL (collapsed by default, opened by Start) -->
+    <section class="try-section" id="trySection">
+      <div class="try-grid">
+        <div class="try-pane">
+          <h3>Try your own code</h3>
+          <textarea id="userCode" spellcheck="false" placeholder="def integrate(f_values, dx):
+    n = len(f_values)
+    total = 0.0
+    for i in range(1, n - 1):
+        total += 0.5 * (f_values[i] + f_values[i+1]) * dx
+    return total"></textarea>
+          <div class="try-actions">
+            <button class="try-btn" id="auditBtn">▶ Audit</button>
+            <span class="try-status" id="tryStatus">idle</span>
+          </div>
+          <div class="try-results" id="tryResults" style="margin-top: 1rem;">
+            <div class="empty">Findings appear here. Hits the live Helios backend.</div>
+          </div>
+        </div>
+        <div class="try-pane">
+          <h3>Install the MCP server</h3>
+          <p style="font-size:12px;color:var(--dim);line-height:1.7;margin-bottom:.5rem;">Run helios locally inside Claude, Cursor, or any MCP-compatible agent.</p>
+          <div class="install">
+            <span class="copy" id="cp1">copy</span>
+            <code>pip install "helios[mcp]" &amp;&amp; helios-mcp</code>
+          </div>
+          <p style="font-size:11px;color:var(--dim);line-height:1.7;margin:.75rem 0 .35rem;">Then add to <code style="color:var(--fg);">~/Library/Application Support/Claude/claude_desktop_config.json</code>:</p>
+          <div class="install">
+            <span class="copy" id="cp2">copy</span><code>{
+  "mcpServers": {
+    "helios": { "command": "helios-mcp" }
+  }
+}</code>
+          </div>
+          <p class="small">Once installed, any agent generating scientific Python will route through helios for audit, fix, verify, and quantum/GPU routing before shipping code.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- INFO TEXT — below everything else -->
+    <section class="info">
+      <div class="info-col">
+        <h4>What it does</h4>
+        <p>Audits scientific Python for silent bugs that don't crash but produce wrong results — off-by-one in numerical integration, unit mismatches, subtractive cancellation, broken boundary conditions.</p>
+        <p>Generates a verified rewrite, runs it against synthesized inputs in a sandbox, and decides where the workload should run.</p>
+      </div>
+      <div class="info-col">
+        <h4>Why quantum routing</h4>
+        <p>Most optimizers stop at GPU. Helios goes further: <span class="quantum-tag">quantum amplitude estimation</span> gives quadratic speedup on Monte Carlo, <span class="quantum-tag">QAOA</span> on combinatorial optimization, <span class="quantum-tag">HHL</span> on certain linear systems.</p>
+        <p>Most workloads stay classical. The ones that benefit from quantum, you'll know.</p>
+      </div>
+      <div class="info-col">
+        <h4>Who it's for</h4>
+        <p>Researchers and engineers writing numerical Python — drug discovery, climate modeling, battery simulation, particle physics, finance, ML.</p>
+        <p>Anywhere a wrong number ships and nobody notices for years.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>HELIOS · v0.1</span>
+      <span>quantum-aware optimizer for scientific code</span>
+    </footer>
+  </main>
+
+  <script>
+    // ============= background =============
+    const bg = document.getElementById('bg'); const ctx = bg.getContext('2d');
+    let W = 0, H = 0; const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let mx = -9999, my = -9999, mxs = -9999, mys = -9999, scrollY = 0;
+    function resize() {
+      W = window.innerWidth; H = window.innerHeight;
+      bg.width = W * DPR; bg.height = H * DPR;
+      bg.style.width = W + 'px'; bg.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    window.addEventListener('resize', resize); resize();
+    window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    window.addEventListener('scroll', () => { scrollY = window.scrollY; }, { passive: true });
+
+    const N = 60;
+    const particles = Array.from({length: N}, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.1, vy: (Math.random() - 0.5) * 0.1,
+      r: Math.random() * 1.2 + 0.3,
+    }));
+    let t = 0;
+    function draw() {
+      t += 0.005;
+      mxs = mxs < -9000 ? mx : mxs + (mx - mxs) * 0.08;
+      mys = mys < -9000 ? my : mys + (my - mys) * 0.08;
+      ctx.fillStyle = '#07090d'; ctx.fillRect(0, 0, W, H);
+      const sx = W * 0.5, sy = -H * 0.05 + Math.sin(t * 0.3) * 12 - scrollY * 0.05;
+      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, H);
+      grad.addColorStop(0, 'rgba(232,163,61,0.22)');
+      grad.addColorStop(0.25, 'rgba(232,163,61,0.06)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(232,163,61,0.06)'; ctx.lineWidth = 1;
+      const cols = 28, rows = 16, sX = W / cols, sY = H / rows;
+      for (let i = 0; i <= cols; i++) {
+        ctx.beginPath();
+        for (let y = 0; y <= rows; y++) {
+          const px = i * sX, py = y * sY;
+          const dx = px - mxs, dy = py - mys, d = Math.sqrt(dx*dx + dy*dy);
+          const k = Math.max(0, 100 - d * 0.35) * 0.55;
+          const ox = (dx / (d + 1)) * k, oy = (dy / (d + 1)) * k;
+          if (y === 0) ctx.moveTo(px + ox, py + oy); else ctx.lineTo(px + ox, py + oy);
+        } ctx.stroke();
+      }
+      for (let j = 0; j <= rows; j++) {
+        ctx.beginPath();
+        for (let x = 0; x <= cols; x++) {
+          const px = x * sX, py = j * sY;
+          const dx = px - mxs, dy = py - mys, d = Math.sqrt(dx*dx + dy*dy);
+          const k = Math.max(0, 100 - d * 0.35) * 0.55;
+          const ox = (dx / (d + 1)) * k, oy = (dy / (d + 1)) * k;
+          if (x === 0) ctx.moveTo(px + ox, py + oy); else ctx.lineTo(px + ox, py + oy);
+        } ctx.stroke();
+      }
+      for (const p of particles) {
+        const dx = p.x - mxs, dy = p.y - mys, d2 = dx*dx + dy*dy;
+        if (d2 < 16000 && d2 > 1) {
+          const f = (16000 - d2) / 16000, dd = Math.sqrt(d2);
+          p.vx += (dx / dd) * f * 0.07; p.vy += (dy / dd) * f * 0.07;
+        }
+        p.vx *= 0.95; p.vy *= 0.95;
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x += W; if (p.x > W) p.x -= W;
+        if (p.y < 0) p.y += H; if (p.y > H) p.y -= H;
+        ctx.fillStyle = 'rgba(243,236,224,0.55)';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+    // ============= cursor =============
+    const ring = document.getElementById('ring'), dot = document.getElementById('dot');
+    let rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px'; });
+    function follow() {
+      rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
+      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+      requestAnimationFrame(follow);
+    }
+    follow();
+    function bindHover() {
+      document.querySelectorAll('button, input, textarea, .copy, .stage-pill, .route-card, .try-pane').forEach(el => {
+        el.addEventListener('mouseenter', () => ring.classList.add('hot'));
+        el.addEventListener('mouseleave', () => ring.classList.remove('hot'));
+      });
+    }
+    bindHover();
+
+    // ============= demo =============
+    const codeLines = [
+      { html: '<span class="cm"># integrate.py — trapezoidal rule on f(x) samples</span>' },
+      { html: '<span class="kw">def</span> <span class="fn">integrate</span>(f_values, dx):' },
+      { html: '    n = <span class="fn">len</span>(f_values)' },
+      { html: '    total = <span class="nm">0.0</span>' },
+      { html: '    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">1</span>, n - <span class="nm">1</span>):  <span class="cm"># off-by-one</span>', cls: 'bug' },
+      { html: '        total += <span class="nm">0.5</span> * (f_values[i] + f_values[i+<span class="nm">1</span>]) * dx' },
+      { html: '    <span class="kw">return</span> total' },
+    ];
+    const editor = document.getElementById('editor');
+    editor.innerHTML = codeLines.map((ln, i) =>
+      `<span class="code-line ${ln.cls || ''}"><span class="ln">${String(i+1).padStart(2,' ')}</span>${ln.html}</span>`
+    ).join('');
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const results = document.getElementById('results');
+    const stagePills = document.querySelectorAll('.stage-pill');
+
+    function setStage(name, state) {
+      stagePills.forEach(p => {
+        if (p.dataset.stage === name) {
+          p.classList.remove('active', 'done');
+          if (state) p.classList.add(state);
+        }
+      });
+    }
+
+    function setNarration(text) {
+      const n = document.getElementById('narration');
+      n.style.opacity = '0';
+      setTimeout(() => { n.textContent = text; n.style.opacity = '1'; }, 200);
+    }
+
+    function appendResult(html) {
+      const div = document.createElement('div');
+      div.className = 'stage-result';
+      div.innerHTML = html;
+      results.appendChild(div);
+      requestAnimationFrame(() => div.classList.add('in'));
+      return div;
+    }
+
+    async function streamProgress(container, lines, perMs = 380) {
+      for (const text of lines) {
+        const span = document.createElement('div');
+        span.className = 'progress-line';
+        span.textContent = text;
+        container.appendChild(span);
+        await sleep(40);
+        span.classList.add('in');
+        await sleep(perMs - 40);
+      }
+    }
+
+    async function runDemo() {
+      // 01 AUDIT
+      setStage('audit', 'active');
+      setNarration('Static AST + LLM audit. Looking for silent scientific bugs.');
+      const audit = appendResult('<div class="stage-label">01 · Audit</div><div class="prog"></div>');
+      const auditProg = audit.querySelector('.prog');
+      await streamProgress(auditProg, ['parsing AST', 'static checks', 'merging signals'], 320);
+      audit.insertAdjacentHTML('beforeend', `
+        <div class="issue-card">
+          <div class="issue-meta"><span class="sev">HIGH</span><span class="cat">off_by_one</span><span class="ln">line 5</span></div>
+          <div class="issue-title">Loop starts at index 1 — possible off-by-one</div>
+          <div class="issue-expl">range(1, n-1) skips index 0. The trapezoidal rule should integrate over every interval — drops the first interval, silently wrong.</div>
+        </div>`);
+      setStage('audit', 'done');
+      await sleep(500);
+
+      // 02 FIX
+      setStage('fix', 'active');
+      setNarration('Now it rewrites — only the bug changes, nothing else.');
+      const fix = appendResult('<div class="stage-label">02 · Fix</div><div class="prog"></div>');
+      await streamProgress(fix.querySelector('.prog'), ['identifying target function', 'generating minimal rewrite'], 320);
+      fix.insertAdjacentHTML('beforeend', `
+        <div class="diff">
+          <span class="dl del">    for i in range(1, n - 1):  # off-by-one</span>
+          <span class="dl add">    for i in range(0, n - 1):</span>
+        </div>`);
+      setStage('fix', 'done');
+      await sleep(500);
+
+      // 03 VERIFY
+      setStage('verify', 'active');
+      setNarration('Both versions run in sandboxes on synthesized inputs. Numerical agreement check.');
+      const ver = appendResult('<div class="stage-label">03 · Verify</div><div class="prog"></div>');
+      await streamProgress(ver.querySelector('.prog'), ['synthesizing 12 inputs', 'sandbox A: original', 'sandbox B: fix', 'numpy.allclose comparison'], 360);
+      ver.insertAdjacentHTML('beforeend', `
+        <table class="vt"><thead><tr><th>#</th><th>input</th><th>orig</th><th>fix</th><th>agree</th></tr></thead><tbody id="vbody"></tbody></table>
+        <div class="verdict" id="vbanner"><span>Fix changes behavior on 8 / 12 inputs · bug confirmed</span><span class="note">Disagreement is the bug. Cases 3, 7, 8, 9 hit edges where the bug doesn't fire.</span></div>`);
+      const rows = [
+        ['1','[0.0, 0.5, 1.0, 1.5, 2.0]','1.875','2.000', false],
+        ['2','[1.0, 1.0, 1.0, 1.0]','2.000','3.000', false],
+        ['3','[0.0, 0.0, 0.0]','0.000','0.000', true],
+        ['4','[2.0, 4.0, 6.0, 8.0]','14.00','20.00', false],
+        ['5','[1e-9, 1e-9, 1e-9]','1e-9','2e-9', false],
+        ['6','[100, 200, 300]','300.0','500.0', false],
+        ['7','[]','ValueError','ValueError', true],
+        ['8','[3.14]','0.000','0.000', true],
+        ['9','[-1, 1, -1, 1]','0.000','0.000', true],
+        ['10','[1.0, 2.0]','0.000','1.500', false],
+        ['11','[0.5, 1.5, 2.5, 3.5]','4.000','6.000', false],
+        ['12','[1e6, 2e6, 3e6]','2.5e6','4.5e6', false],
+      ];
+      const vbody = document.getElementById('vbody');
+      for (let i = 0; i < rows.length; i++) {
+        const [n,inp,o,f,ag] = rows[i];
+        const tr = document.createElement('tr');
+        tr.style.animationDelay = (i * 80) + 'ms';
+        tr.innerHTML = `<td>${n}</td><td>${inp}</td><td>${o}</td><td>${f}</td>${ag?'<td class="ok">✓</td>':'<td class="no">✗</td>'}`;
+        vbody.appendChild(tr);
+        await sleep(80);
+      }
+      await sleep(200);
+      document.getElementById('vbanner').classList.add('in');
+      setStage('verify', 'done');
+      await sleep(600);
+
+      // 04 ROUTE
+      setStage('route', 'active');
+      setNarration('Now the part that matters — where should this run?');
+      const rt = appendResult('<div class="stage-label">04 · Route</div><div class="prog"></div>');
+      await streamProgress(rt.querySelector('.prog'), ['scanning hot blocks', 'classical: GPU pattern matching', 'quantum: amplitude estimation candidate'], 380);
+      rt.insertAdjacentHTML('beforeend', `
+        <div class="route-grid">
+          <div class="route-card">
+            <div class="route-tag"><span class="pat">CLASSICAL · GPU</span><span class="speedup">~10×</span></div>
+            <div class="route-rationale">Numeric reduction loop. Vectorize with np.trapz, or move to GPU for n &gt; 10⁶. Engineering: low.</div>
+          </div>
+          <div class="route-card q">
+            <div class="route-tag"><span class="pat">QUANTUM · QAE</span><span class="speedup">~quadratic</span></div>
+            <div class="route-rationale">Numerical integration is a textbook quantum amplitude estimation target. ~√N speedup at large sample counts. Worth it for n &gt; 10⁹. Hardware: IBM, IonQ, Quantinuum.</div>
+          </div>
+        </div>`);
+      setStage('route', 'done');
+      setNarration('Done. Audit → fix → verify → route. Right code, right hardware.');
+    }
+
+    // start demo on load (slight delay so reveal feels intentional)
+    setTimeout(runDemo, 900);
+
+    // ============= Start now CTA =============
+    document.getElementById('startBtn').addEventListener('click', () => {
+      const trySection = document.getElementById('trySection');
+      trySection.classList.add('open');
+      bindHover();
+      setTimeout(() => {
+        document.getElementById('userCode').focus();
+        trySection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 200);
+    });
+
+    // ============= waitlist =============
+    document.getElementById('emailBtn').addEventListener('click', () => {
+      const email = document.getElementById('email').value.trim();
+      if (!email || !email.includes('@')) return;
+      try {
+        const list = JSON.parse(localStorage.getItem('helios_waitlist') || '[]');
+        if (!list.includes(email)) list.push(email);
+        localStorage.setItem('helios_waitlist', JSON.stringify(list));
+      } catch (e) {}
+      document.getElementById('ack').classList.add('in');
+      document.getElementById('email').value = '';
+      setTimeout(() => document.getElementById('ack').classList.remove('in'), 3000);
+    });
+
+    // ============= try-your-own =============
+    const auditBtn = document.getElementById('auditBtn');
+    const tryStatus = document.getElementById('tryStatus');
+    const tryResults = document.getElementById('tryResults');
+    auditBtn.addEventListener('click', async () => {
+      const code = document.getElementById('userCode').value.trim();
+      if (!code) {
+        tryResults.innerHTML = '<div class="empty">Paste some Python first.</div>';
+        return;
+      }
+      auditBtn.disabled = true;
+      tryStatus.textContent = 'auditing…';
+      tryResults.innerHTML = '<div class="empty">Hitting Helios backend…</div>';
+      try {
+        const res = await fetch('/api/live/audit/static', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: 'user.py', source_code: code }),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const findings = data.findings || [];
+        if (findings.length === 0) {
+          tryResults.innerHTML = `<div style="color:var(--right);font-size:12px;">✓ No static issues found in ${data.elapsed_ms?.toFixed(1)}ms.</div>
+            <div class="small">For deeper analysis (LLM audit, fix, verify, GPU/quantum routing), install the MCP server.</div>`;
+        } else {
+          tryResults.innerHTML = findings.map(f => `
+            <div class="issue-card" style="margin-bottom:.5rem;">
+              <div class="issue-meta"><span class="sev">${f.severity.toUpperCase()}</span><span class="cat">${f.category}</span><span class="ln">line ${f.line_start}${f.line_end !== f.line_start ? '–' + f.line_end : ''}</span></div>
+              <div class="issue-title">${f.title}</div>
+              <div class="issue-expl">${f.explanation}</div>
+            </div>`).join('') +
+            `<div class="small">${findings.length} static finding${findings.length === 1 ? '' : 's'} in ${data.elapsed_ms?.toFixed(1)}ms. For fix &amp; verify, install the MCP server.</div>`;
+        }
+        tryStatus.textContent = 'done';
+      } catch (e) {
+        tryResults.innerHTML = `<div style="color:var(--wrong);font-size:12px;">Backend error: ${e.message}</div>
+          <div class="small">The backend may be cold-starting. Try again in a few seconds, or install the MCP server to run locally.</div>`;
+        tryStatus.textContent = 'error';
+      } finally {
+        auditBtn.disabled = false;
+      }
+    });
+
+    // ============= copy buttons =============
+    function bindCopy(id, text) {
+      const el = document.getElementById(id);
+      el.addEventListener('click', () => {
+        navigator.clipboard.writeText(text);
+        const orig = el.textContent;
+        el.textContent = 'copied';
+        setTimeout(() => { el.textContent = orig; }, 1200);
+      });
+    }
+    bindCopy('cp1', 'pip install "helios[mcp]" && helios-mcp');
+    bindCopy('cp2', '{\n  "mcpServers": {\n    "helios": { "command": "helios-mcp" }\n  }\n}');
+  </script>
+</body>
+</html>

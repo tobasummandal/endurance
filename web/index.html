@@ -1004,7 +1004,8 @@
     <section class="cta">
       <div class="section-tag reveal">Begin</div>
       <h2 class="reveal">Run it on<br>your code.</h2>
-      <button class="button reveal delay-1">Drop a .py file</button>
+      <button class="button reveal delay-1" id="dropBtn">Drop a .py file</button>
+      <input type="file" id="fileInput" accept=".py,text/x-python" style="display:none" />
       <div class="endpoint reveal delay-2">or <code>POST /api/sessions</code></div>
     </section>
 
@@ -1274,6 +1275,14 @@
       integrate: {
         filename: 'integrate.py',
         lines: '7 lines',
+        source: `# integrate.py — trapezoidal rule
+def integrate(f_values, dx):
+    n = len(f_values)
+    total = 0.0
+    for i in range(1, n - 1):  # off-by-one
+        total += 0.5 * (f_values[i] + f_values[i+1]) * dx
+    return total
+`,
         code: [
           { html: '<span class="cm"># integrate.py — trapezoidal rule</span>' },
           { html: '<span class="kw">def</span> <span class="fn">integrate</span>(f_values, dx):' },
@@ -1331,6 +1340,14 @@
       simulate: {
         filename: 'simulate.py',
         lines: '6 lines',
+        source: `# simulate.py — running history of states
+def simulate(steps, history=[]):  # mutable default!
+    state = 0.0
+    for _ in range(steps):
+        state += 1.0
+        history.append(state)
+    return history
+`,
         code: [
           { html: '<span class="cm"># simulate.py — running history of states</span>' },
           { html: '<span class="kw">def</span> <span class="fn">simulate</span>(steps, history=[]):  <span class="cm"># mutable default!</span>', cls: 'bug' },
@@ -1386,6 +1403,10 @@
       converged: {
         filename: 'converged.py',
         lines: '3 lines',
+        source: `# converged.py — iterative solver convergence check
+def is_converged(prev, curr):
+    return abs(prev - curr) == 0.0  # float ==
+`,
         code: [
           { html: '<span class="cm"># converged.py — iterative solver convergence check</span>' },
           { html: '<span class="kw">def</span> <span class="fn">is_converged</span>(prev, curr):' },
@@ -1557,12 +1578,73 @@
       stage.classList.add('done');
     }
 
+    // ===== backend wiring =====
+    async function api(path, opts) {
+      opts = opts || {};
+      const res = await fetch('/api' + path, Object.assign({
+        headers: { 'Content-Type': 'application/json' },
+      }, opts));
+      if (!res.ok) {
+        let body = '';
+        try { body = JSON.stringify(await res.json()); } catch (_) { body = await res.text(); }
+        throw new Error(res.status + ' ' + path + ' — ' + body);
+      }
+      return res.json();
+    }
+
+    function lineRef(i) {
+      return i.line_start === i.line_end ? String(i.line_start) : (i.line_start + '–' + i.line_end);
+    }
+
+    // LCS-based line diff so insertions/deletions render cleanly
+    function lineDiff(orig, fixed) {
+      const a = orig.split('\n');
+      const b = fixed.split('\n');
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
+      for (let i = m - 1; i >= 0; i--) {
+        for (let j = n - 1; j >= 0; j--) {
+          dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+      }
+      const out = [];
+      let i = 0, j = 0;
+      while (i < m && j < n) {
+        if (a[i] === b[j]) { i++; j++; }
+        else if (dp[i + 1][j] >= dp[i][j + 1]) { out.push({ type: 'del', text: a[i++] }); }
+        else { out.push({ type: 'add', text: b[j++] }); }
+      }
+      while (i < m) out.push({ type: 'del', text: a[i++] });
+      while (j < n) out.push({ type: 'add', text: b[j++] });
+      return out;
+    }
+
+    function showStageError(name, err) {
+      const stage = document.getElementById('stage-' + name);
+      stage.classList.remove('active');
+      stage.classList.add('done');
+      const body = document.getElementById('body-' + name);
+      while (body.firstChild) body.removeChild(body.firstChild);
+      const wrap = document.createElement('div');
+      wrap.style.color = 'var(--wrong)';
+      wrap.style.fontSize = '12px';
+      wrap.style.lineHeight = '1.5';
+      wrap.textContent = 'backend error · ' + (err && err.message ? err.message : String(err));
+      body.appendChild(wrap);
+    }
+
+    function endRun(label) {
+      document.getElementById('status').textContent = label;
+      document.getElementById('runBtn').disabled = false;
+      document.getElementById('runBtn').textContent = label === 'done' ? '↻ Run again' : '↻ Try again';
+      isRunning = false;
+    }
+
     async function runPipeline() {
       if (isRunning) return;
       isRunning = true;
       document.getElementById('runBtn').disabled = true;
       document.getElementById('runBtn').textContent = '◉ Running';
-      // reset
       ['audit','fix','verify','route'].forEach(s => {
         const stage = document.getElementById('stage-' + s);
         stage.classList.remove('active', 'done');
@@ -1570,31 +1652,152 @@
       });
 
       const ex = examples[currentEx];
-      await runStage('audit', ex.audit, () => renderIssue(ex.audit.issue));
-      await sleep(300);
-      await runStage('fix', ex.fix, () => renderDiff(ex.fix.diff, ex.fix.summary));
+      const filename = ex.filename;
+      const source = ex.source;
+      let session, issues, fix, verification, route;
+
+      // 01 · Audit
+      try {
+        const astage = document.getElementById('stage-audit');
+        astage.classList.add('active');
+        document.getElementById('status').textContent = 'audit…';
+        await streamProgress('body-audit',
+          ['creating session…','running static checks…','running LLM audit…','merging + deduping'], 320);
+        session = await api('/sessions', {
+          method: 'POST',
+          body: JSON.stringify({ filename: filename, source_code: source }),
+        });
+        issues = await api('/sessions/' + session.id + '/audit', { method: 'POST' });
+        const target = document.getElementById('body-audit');
+        if (!issues.length) {
+          target.insertAdjacentHTML('beforeend',
+            '<div class="route-empty">No issues found. Code looks clean.</div>');
+          astage.classList.remove('active');
+          astage.classList.add('done');
+          return endRun('done');
+        }
+        const top = issues[0];
+        target.insertAdjacentHTML('beforeend', renderIssue({
+          severity: (top.severity || '').toUpperCase(),
+          category: top.category,
+          line: lineRef(top),
+          title: top.title,
+          explanation: top.explanation,
+        }));
+        await sleep(120);
+        astage.classList.remove('active');
+        astage.classList.add('done');
+      } catch (e) {
+        showStageError('audit', e);
+        return endRun('error');
+      }
+
       await sleep(300);
 
-      // verify is custom — we want the streaming row insertion
-      const vstage = document.getElementById('stage-verify');
-      vstage.classList.add('active');
-      document.getElementById('status').textContent = 'verify…';
-      await streamProgress('body-verify', ex.verify.progress, 420);
-      document.getElementById('body-verify').insertAdjacentHTML('beforeend', renderVerify(ex.verify));
-      await fillVerifyRows(ex.verify.rows);
-      vstage.classList.remove('active');
-      vstage.classList.add('done');
+      // 02 · Fix
+      try {
+        const fstage = document.getElementById('stage-fix');
+        fstage.classList.add('active');
+        document.getElementById('status').textContent = 'fix…';
+        await streamProgress('body-fix',
+          ['identifying target function…','generating minimal rewrite…','validating syntax'], 320);
+        fix = await api('/sessions/' + session.id + '/issues/' + issues[0].id + '/fix', { method: 'POST' });
+        const diff = lineDiff(source, fix.fixed_code);
+        document.getElementById('body-fix').insertAdjacentHTML('beforeend',
+          renderDiff(diff, fix.diff_summary || 'Minimal rewrite applied.'));
+        await sleep(120);
+        fstage.classList.remove('active');
+        fstage.classList.add('done');
+      } catch (e) {
+        showStageError('fix', e);
+        return endRun('error');
+      }
 
       await sleep(300);
-      await runStage('route', ex.route, () => renderRoute(ex.route.candidates));
 
-      document.getElementById('status').textContent = 'done';
-      document.getElementById('runBtn').disabled = false;
-      document.getElementById('runBtn').textContent = '↻ Run again';
-      isRunning = false;
+      // 03 · Verify
+      try {
+        const vstage = document.getElementById('stage-verify');
+        vstage.classList.add('active');
+        document.getElementById('status').textContent = 'verify…';
+        await streamProgress('body-verify',
+          ['synthesizing test inputs…','spawning sandbox A (original)…','spawning sandbox B (fix)…','comparing outputs…'],
+          420);
+        verification = await api('/sessions/' + session.id + '/fixes/' + fix.id + '/verify', { method: 'POST' });
+        const rows = verification.test_cases.map(tc => [
+          String(tc.index), tc.input_preview, tc.original_output_preview,
+          tc.fix_output_preview, tc.agreed, tc.notes || null,
+        ]);
+        const passed = verification.passed;
+        const total = verification.test_cases.length;
+        const verdictMap = {
+          all_agree: { banner: 'All ' + total + ' cases agree', note: 'Fix preserves observed behavior on every synthesized input.' },
+          partial_disagree: { banner: passed + ' / ' + total + ' agree · ' + (total - passed) + ' disagree', note: 'Disagreements are where the bug manifests — inspect cases marked ✗.' },
+          all_disagree: { banner: '0 / ' + total + ' agree', note: 'Fix changes behavior on every input. Review carefully.' },
+          error: { banner: 'Verification error', note: 'Sandbox or comparison failed. Check logs.' },
+        };
+        const meta = verdictMap[verification.overall_verdict] || verdictMap.partial_disagree;
+        document.getElementById('body-verify').insertAdjacentHTML('beforeend',
+          renderVerify({ rows: rows, passed: passed, banner: meta.banner, note: meta.note }));
+        await fillVerifyRows(rows);
+        vstage.classList.remove('active');
+        vstage.classList.add('done');
+      } catch (e) {
+        showStageError('verify', e);
+      }
+
+      await sleep(300);
+
+      // 04 · Route
+      try {
+        const rstage = document.getElementById('stage-route');
+        rstage.classList.add('active');
+        document.getElementById('status').textContent = 'route…';
+        await streamProgress('body-route',
+          ['scanning for hot patterns…','classifying candidates…','asking model for cost / benefit'], 320);
+        route = await api('/sessions/' + session.id + '/route', { method: 'POST' });
+        const candidates = (route.gpu_candidates || []).map(c => ({
+          lines: c.line_start === c.line_end ? String(c.line_start) : (c.line_start + '–' + c.line_end),
+          pattern: c.pattern,
+          speedup: c.estimated_speedup,
+          complexity: c.complexity,
+          rationale: c.rationale,
+        }));
+        document.getElementById('body-route').insertAdjacentHTML('beforeend', renderRoute(candidates));
+        await sleep(120);
+        rstage.classList.remove('active');
+        rstage.classList.add('done');
+      } catch (e) {
+        showStageError('route', e);
+      }
+
+      endRun('done');
     }
 
     document.getElementById('runBtn').addEventListener('click', runPipeline);
+
+    // ===== upload .py =====
+    const dropBtn = document.getElementById('dropBtn');
+    const fileInput = document.getElementById('fileInput');
+    dropBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const key = '__upload__';
+      const lineCount = text.split('\n').length;
+      examples[key] = {
+        filename: file.name,
+        lines: lineCount + ' lines',
+        source: text,
+        code: text.split('\n').map(line => ({ html: escapeHtml(line) || '&nbsp;' })),
+      };
+      document.querySelectorAll('.sandbox-tab').forEach(x => x.classList.remove('active'));
+      loadExample(key);
+      document.querySelector('.sandbox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      await sleep(400);
+      runPipeline();
+    });
   </script>
 </body>
 </html>

@@ -43,6 +43,12 @@ def health() -> dict:
 
 
 # Static frontend — must be mounted LAST so /api/* and /health win route precedence.
+# Layout:
+#   /web/index.html  → marketing landing (current handcrafted page) served at "/"
+#   /web/out/        → Next.js reviewer app (basePath="/app") served at "/app"
 WEB_DIR = Path(__file__).resolve().parent.parent.parent / "web"
+NEXT_OUT = WEB_DIR / "out"
+if NEXT_OUT.is_dir():
+    app.mount("/app", StaticFiles(directory=NEXT_OUT, html=True), name="reviewer")
 if WEB_DIR.is_dir():
     app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")

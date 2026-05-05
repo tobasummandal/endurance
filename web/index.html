@@ -1004,9 +1004,9 @@
     <section class="cta">
       <div class="section-tag reveal">Begin</div>
       <h2 class="reveal">Run it on<br>your code.</h2>
-      <button class="button reveal delay-1" id="dropBtn">Drop a .py file</button>
-      <input type="file" id="fileInput" accept=".py,text/x-python" style="display:none" />
+      <a class="button reveal delay-1" id="dropBtn" href="/app/" style="text-decoration:none;display:inline-block;">Drop a .py file</a>
       <div class="endpoint reveal delay-2">or <code>POST /api/sessions</code></div>
+      <div class="endpoint reveal delay-2" style="margin-top:0.5rem;"><a href="/app/sessions/" style="color:var(--dim);text-decoration:none;">→ Past sessions</a></div>
     </section>
 
     <footer>
@@ -1776,28 +1776,7 @@ def is_converged(prev, curr):
 
     document.getElementById('runBtn').addEventListener('click', runPipeline);
 
-    // ===== upload .py =====
-    const dropBtn = document.getElementById('dropBtn');
-    const fileInput = document.getElementById('fileInput');
-    dropBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const text = await file.text();
-      const key = '__upload__';
-      const lineCount = text.split('\n').length;
-      examples[key] = {
-        filename: file.name,
-        lines: lineCount + ' lines',
-        source: text,
-        code: text.split('\n').map(line => ({ html: escapeHtml(line) || '&nbsp;' })),
-      };
-      document.querySelectorAll('.sandbox-tab').forEach(x => x.classList.remove('active'));
-      loadExample(key);
-      document.querySelector('.sandbox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      await sleep(400);
-      runPipeline();
-    });
+    // CTA "Drop a .py file" is now a link to /app/ (Next.js reviewer). Upload + audit happen there.
   </script>
 </body>
 </html>

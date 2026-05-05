@@ -25,7 +25,7 @@ def client():
 
 def test_live_static_returns_findings(client):
     src = "def f(x=[]):\n    pass\n"
-    r = client.post("/live/audit/static", json={"filename": "x.py", "source_code": src})
+    r = client.post("/api/live/audit/static", json={"filename": "x.py", "source_code": src})
     assert r.status_code == 200, r.text
     body = r.json()
     cats = [f["category"] for f in body["findings"]]
@@ -37,7 +37,7 @@ def test_live_static_rejects_oversize(client, monkeypatch):
     from helios import config
     monkeypatch.setattr(config.settings, "live_max_file_lines", 5)
     big = "\n".join(f"x{i} = {i}" for i in range(20))
-    r = client.post("/live/audit/static", json={"filename": "x.py", "source_code": big})
+    r = client.post("/api/live/audit/static", json={"filename": "x.py", "source_code": big})
     assert r.status_code == 400
     assert r.json()["error"]["code"] == "file_too_large_for_live"
 
@@ -50,11 +50,11 @@ def test_live_static_rate_limited(client, monkeypatch):
     monkeypatch.setattr(live_module, "limiter", tiny)
     src = "x = 1\n"
     headers = {"x-session-token": "t1"}
-    r1 = client.post("/live/audit/static",
+    r1 = client.post("/api/live/audit/static",
                      json={"filename": "x.py", "source_code": src},
                      headers=headers)
     assert r1.status_code == 200
-    r2 = client.post("/live/audit/static",
+    r2 = client.post("/api/live/audit/static",
                      json={"filename": "x.py", "source_code": src},
                      headers=headers)
     assert r2.status_code == 429
@@ -72,7 +72,7 @@ def test_live_stream_emits_static_event(client, monkeypatch):
 
     src = "def f():\n    for i in range(1, 10):\n        pass\n"
     headers = {"x-session-token": "stream-t1"}
-    with client.stream("POST", "/live/audit/stream",
+    with client.stream("POST", "/api/live/audit/stream",
                        json={"filename": "x.py", "source_code": src},
                        headers=headers) as r:
         assert r.status_code == 200
@@ -96,11 +96,11 @@ def test_live_stream_full_cache_skips_llm(client, monkeypatch):
     headers = {"x-session-token": "stream-cache"}
     payload = {"filename": "x.py", "source_code": src}
 
-    with client.stream("POST", "/live/audit/stream", json=payload, headers=headers) as r:
+    with client.stream("POST", "/api/live/audit/stream", json=payload, headers=headers) as r:
         b1 = b"".join(r.iter_bytes()).decode()
     first_calls = calls["n"]
 
-    with client.stream("POST", "/live/audit/stream", json=payload, headers=headers) as r:
+    with client.stream("POST", "/api/live/audit/stream", json=payload, headers=headers) as r:
         b2 = b"".join(r.iter_bytes()).decode()
 
     assert "event: cache_hit" in b2
@@ -121,7 +121,7 @@ def test_fix_preview_calls_generator(client, monkeypatch):
         "title": "off by one", "explanation": "loop starts at 1",
         "source": "static",
     }
-    r = client.post("/live/fix/preview", json={
+    r = client.post("/api/live/fix/preview", json={
         "filename": "x.py",
         "source_code": "def f():\n    pass\n",
         "finding": finding,
@@ -133,10 +133,10 @@ def test_fix_preview_calls_generator(client, monkeypatch):
 # ---- Phase 4 ----
 
 def test_stats_endpoint(client):
-    r0 = client.get("/live/stats")
+    r0 = client.get("/api/live/stats")
     assert r0.status_code == 200
     base = r0.json()
-    client.post("/live/audit/static",
+    client.post("/api/live/audit/static",
                 json={"filename": "x.py", "source_code": "x = 1\n"})
-    r1 = client.get("/live/stats")
+    r1 = client.get("/api/live/stats")
     assert r1.json()["static_calls"] >= base["static_calls"] + 1

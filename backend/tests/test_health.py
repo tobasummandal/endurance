@@ -17,15 +17,15 @@ def test_health(client):
 
 def test_create_session_and_get(client):
     src = "def add(a, b):\n    return a + b\n"
-    r = client.post("/sessions", json={"filename": "x.py", "source_code": src})
+    r = client.post("/api/sessions", json={"filename": "x.py", "source_code": src})
     assert r.status_code == 200, r.text
     sid = r.json()["id"]
 
-    r2 = client.get(f"/sessions/{sid}")
+    r2 = client.get(f"/api/sessions/{sid}")
     assert r2.status_code == 200
     assert r2.json()["filename"] == "x.py"
 
 
 def test_create_session_rejects_empty(client):
-    r = client.post("/sessions", json={"filename": "x.py", "source_code": "   "})
+    r = client.post("/api/sessions", json={"filename": "x.py", "source_code": "   "})
     assert r.status_code == 400

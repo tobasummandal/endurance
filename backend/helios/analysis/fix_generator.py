@@ -4,8 +4,17 @@ from ..config import settings
 from ..llm import generate, load_prompt, parse_json
 
 
+# Issue categories that warrant a structural refactor (encapsulate state into a class)
+# rather than a minimal in-place rewrite.
+_REFACTOR_CATEGORIES = {"module_state"}
+
+
+def _prompt_for(category: str) -> str:
+    return "refactor.v1.txt" if category in _REFACTOR_CATEGORIES else "fix.v1.txt"
+
+
 def generate_fix(filename: str, source: str, issue: dict) -> dict:
-    prompt = load_prompt("fix.v1.txt").format(
+    prompt = load_prompt(_prompt_for(issue["category"])).format(
         filename=filename,
         source_code=source,
         category=issue["category"],

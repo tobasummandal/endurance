@@ -7,7 +7,8 @@ from ..llm import generate, load_prompt, parse_json
 
 VALID_CATEGORIES = {
     "off_by_one", "unit_mismatch", "numerical_instability", "float_equality",
-    "mutable_default", "bare_except", "shape_assumption", "boundary_condition", "other",
+    "mutable_default", "module_state", "bare_except", "shape_assumption",
+    "boundary_condition", "other",
 }
 VALID_SEVERITIES = {"low", "medium", "high", "critical"}
 

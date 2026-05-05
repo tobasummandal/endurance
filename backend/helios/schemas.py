@@ -12,6 +12,7 @@ IssueCategory = Literal[
     "numerical_instability",
     "float_equality",
     "mutable_default",
+    "module_state",
     "bare_except",
     "shape_assumption",
     "boundary_condition",

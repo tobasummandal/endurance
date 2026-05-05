@@ -1,5 +1,6 @@
 'use client';
 
+import QuantumDemo from './QuantumDemo';
 import type { RouteResult } from '@/lib/types';
 
 type Props = {
@@ -56,11 +57,8 @@ export default function RoutePanel({ result, loading }: Props) {
       </div>
 
       <div>
-        <div className="section-tag" style={{ marginBottom: '0.75rem' }}>Quantum</div>
-        <div className="helios-card" style={{ color: 'var(--dim)', fontSize: 12, fontStyle: 'italic', lineHeight: 1.7, opacity: 0.6 }}>
-          Coming when quantum is ready. Helios will route problems whose mathematical shape (graph optimization, certain Monte Carlo,
-          quantum chemistry) maps to QPU hardware once vendors ship usable APIs.
-        </div>
+        <div className="section-tag" style={{ marginBottom: '0.75rem' }}>Quantum · Hybrid Immune-filter → ATC</div>
+        <QuantumDemo />
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from .api import audit, fix, live, route, sessions, verify
+from .api import audit, demo, fix, live, route, sessions, verify
 from .db import init_db
 from .errors import HeliosError, helios_error_handler
 
@@ -35,6 +35,7 @@ app.include_router(fix.router, prefix=API_PREFIX)
 app.include_router(verify.router, prefix=API_PREFIX)
 app.include_router(route.router, prefix=API_PREFIX)
 app.include_router(live.router, prefix=API_PREFIX)
+app.include_router(demo.router, prefix=API_PREFIX)
 
 
 @app.get("/health")

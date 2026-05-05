@@ -95,7 +95,7 @@ export default function DemoPage() {
         <p style={{ fontFamily: 'var(--prose)', fontWeight: 300, fontSize: 15, color: 'var(--fg)', opacity: 0.85, maxWidth: 720, lineHeight: 1.7, marginBottom: '2rem' }}>
           A Monte Carlo statistical-mechanics simulator for a 2D electron gas — written by a physics PhD,
           published in seven papers, about to be handed off to a pharma partner. Watch the handoff
-          collapse from nine months to ninety seconds. <span style={{ color: 'var(--dim)' }}>Press 1–6 or j/k to navigate acts.</span>
+          collapse from nine months to ninety seconds.
         </p>
       </Reveal>
 
@@ -120,15 +120,17 @@ export default function DemoPage() {
           right={
             <>
               <div className="section-tag" style={{ marginBottom: '0.75rem' }}>Issues found · {issues.length}</div>
-              <IssueList
-                issues={issues.map(toIssue)}
-                selectedId={selected?.id}
-                onSelect={(i) => setSelected(issues.find((x) => x.id === i.id) || null)}
-                onGenerateFix={(i) => {
-                  setSelected(issues.find((x) => x.id === i.id) || null);
-                  setAct('trace');
-                }}
-              />
+              <div style={{ maxHeight: 620, overflowY: 'auto', paddingRight: '0.5rem' }}>
+                <IssueList
+                  issues={issues.map(toIssue)}
+                  selectedId={selected?.id}
+                  onSelect={(i) => setSelected(issues.find((x) => x.id === i.id) || null)}
+                  onGenerateFix={(i) => {
+                    setSelected(issues.find((x) => x.id === i.id) || null);
+                    setAct('trace');
+                  }}
+                />
+              </div>
               <div style={{ marginTop: '1rem', fontSize: 12, color: 'var(--dim)', fontStyle: 'italic' }}>
                 Two are silent bugs that would have shipped to production. Three are why production
                 engineers reject this code on first review. One is a hardware opportunity.
@@ -212,11 +214,6 @@ export default function DemoPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="section-tag">Hardware routing — recommendations</div>
           {route ? <RouteThreeColumn route={route} /> : <Loading />}
-          <div className="helios-card" style={{ fontFamily: 'var(--prose)', fontSize: 14, lineHeight: 1.7, opacity: 0.9 }}>
-            GPU routing is real and worth doing today. Quantum is real and not ready — but we&rsquo;re flagging the
-            workloads now, so when the hardware arrives, every Helios install is already labeled. The routing
-            layer wins regardless of which hardware era we&rsquo;re in.
-          </div>
         </div>
       )}
     </section>

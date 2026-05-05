@@ -6,7 +6,7 @@
   <title>HELIOS — The correctness layer for scientific code</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #07090d;
@@ -20,6 +20,7 @@
       --right: #7FE0E0;
       --mono: 'JetBrains Mono', ui-monospace, monospace;
       --serif: 'Fraunces', Georgia, serif;
+      --prose: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -243,12 +244,14 @@
     h2 em { font-style: italic; color: var(--sun); }
 
     p.lead {
-      font-family: var(--mono);
-      font-size: 15px;
-      line-height: 1.75;
-      max-width: 60ch;
+      font-family: var(--prose);
+      font-weight: 300;
+      font-size: 17px;
+      line-height: 1.6;
+      letter-spacing: -0.01em;
+      max-width: 62ch;
       color: var(--fg);
-      opacity: .82;
+      opacity: .9;
     }
 
     .annotation {
@@ -367,11 +370,13 @@
       letter-spacing: -0.01em;
     }
     .domain .scenario {
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.75;
+      font-family: var(--prose);
+      font-weight: 300;
+      font-size: 15px;
+      line-height: 1.65;
+      letter-spacing: -0.01em;
       color: var(--fg);
-      opacity: .85;
+      opacity: .9;
       margin-bottom: 2rem;
     }
     .domain .cost {
@@ -417,11 +422,13 @@
       line-height: 1.05;
     }
     .moat .body p {
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.75;
+      font-family: var(--prose);
+      font-weight: 300;
+      font-size: 15px;
+      line-height: 1.65;
+      letter-spacing: -0.01em;
       color: var(--fg);
-      opacity: .85;
+      opacity: .9;
     }
     .moat .body p + p { margin-top: 1rem; }
     .moat .body .key { color: var(--sun); }
@@ -839,7 +846,7 @@
     <!-- hero -->
     <section class="hero">
       <h1>HELI<span class="o" id="orb">O</span>S</h1>
-      <p class="tagline">The correctness layer for scientific code.<br>Find the silent bug. Verify the fix.</p>
+      <p class="tagline">The correctness layer for scientific code.<br>Sits on top of every AI tool you already use.</p>
       <div class="meta">
         <span>Audit</span>
         <span>Fix</span>
@@ -854,13 +861,13 @@
     <!-- the silent bug -->
     <section>
       <div class="section-tag reveal">The problem</div>
-      <h2 class="reveal">Your code doesn't crash.<br><em>It lies.</em></h2>
+      <h2 class="reveal">Most scientific code<br>is <em>quietly broken.</em><br>Current AI tools make it worse.</h2>
       <div class="bug-grid" style="margin-top: 4rem;">
         <div>
-          <p class="lead reveal">Scientific Python is written by domain scientists, not software engineers. It compiles. It runs. It returns a number.</p>
-          <p class="lead reveal delay-1" style="margin-top: 1.5rem;">The number is wrong by a few percent. Nobody notices for years. The drug fails phase II. The climate model misprices carbon. The battery fails at scale.</p>
-          <p class="lead reveal delay-2" style="margin-top: 1.5rem; color: var(--sun); opacity: 1;">These bugs do not announce themselves. Helios finds them.</p>
-          <div class="annotation reveal delay-3">Off-by-one in the trapezoidal rule, drops the first interval</div>
+          <p class="lead reveal">The code that designs your insulin and predicts hurricanes was written by chemists, not engineers. Off-by-one errors. Wrong units. Numerical instabilities.</p>
+          <p class="lead reveal delay-1" style="margin-top: 1.5rem;">Bugs that don't crash &mdash; they just produce results that look right and are wrong. 30&ndash;70% of published results can&rsquo;t be reproduced. Nature has retracted papers over one-character bugs.</p>
+          <p class="lead reveal delay-2" style="margin-top: 1.5rem; color: var(--sun); opacity: 1;">Cursor and Copilot were trained on web code. They confidently rewrite numerical code with wrong signs, broken indexing, hallucinated math. Helios is the correctness layer they&rsquo;re missing.</p>
+          <div class="annotation reveal delay-3">Off-by-one. Result 3% low &mdash; for six years.</div>
         </div>
         <div class="code reveal delay-1">
 <span class="code-line"><span class="lineno">1</span><span class="cm"># integrate.py</span></span><span class="code-line"><span class="lineno">2</span><span class="kw">def</span> <span class="fn">integrate</span>(f_values, dx):</span><span class="code-line"><span class="lineno">3</span>    n = <span class="fn">len</span>(f_values)</span><span class="code-line"><span class="lineno">4</span>    total = <span class="num">0.0</span></span><span class="code-line bad"><span class="lineno">5</span>    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, n - <span class="num">1</span>):  <span class="cm"># off-by-one</span></span><span class="code-line"><span class="lineno">6</span>        total += <span class="num">0.5</span> * (f_values[i] + f_values[i+<span class="num">1</span>]) * dx</span><span class="code-line"><span class="lineno">7</span>    <span class="kw">return</span> total</span>
@@ -874,31 +881,31 @@
     <!-- pipeline -->
     <section>
       <div class="section-tag reveal">What it does</div>
-      <h2 class="reveal">Audit. Fix.<br><em>Verify.</em> Route.</h2>
-      <p class="lead reveal delay-1" style="margin-top: 1rem;">Four passes over a single Python file. Each one returns evidence, not opinions.</p>
+      <h2 class="reveal">Three jobs.<br><em>One tool.</em></h2>
+      <p class="lead reveal delay-1" style="margin-top: 1rem;">Grammarly for scientific code. Sits on top of every AI tool you already use &mdash; Cursor, Copilot, Claude Code &mdash; catching the bugs they introduce, proving the math is right, routing the right kernels to the right hardware.</p>
       <div class="pipeline">
         <div class="step reveal">
           <div class="num">01</div>
           <h3>Audit</h3>
-          <p>Deterministic AST checks merged with an LLM pass tuned for scientific bugs. Off-by-one, unit mismatch, numerical instability, broken boundary conditions.</p>
+          <p>Reads your scientific code and flags the silent bugs: off-by-one errors, unit mismatches, numerical instabilities. The ones that don&rsquo;t crash but produce wrong answers.</p>
           <div class="verdict">→ severity-ranked findings</div>
         </div>
         <div class="step reveal delay-1">
           <div class="num">02</div>
           <h3>Fix</h3>
-          <p>For one accepted issue, generate a minimal rewrite. Only the bug changes. Returns the full file plus a one-line diff summary.</p>
-          <div class="verdict">→ clean before / after</div>
+          <p>Writes a corrected, faster version. Only the bug changes. You see a clean before / after diff and click accept.</p>
+          <div class="verdict">→ minimal rewrite</div>
         </div>
         <div class="step reveal delay-2">
           <div class="num">03</div>
           <h3>Verify</h3>
-          <p>Synthesize 12 test inputs. Run original and fix in sandboxed subprocesses. Compare with numpy.allclose at rtol=1e-9. Report agreement per case.</p>
-          <div class="verdict">→ evidence, not vibes</div>
+          <p>Runs original and fix on the same synthesized inputs in sandboxed subprocesses. Proves the fix is right with numerical agreement at rtol=1e-9. Research-grade evidence, not Copilot vibes.</p>
+          <div class="verdict">→ proof, not opinion</div>
         </div>
         <div class="step reveal delay-3">
           <div class="num">04</div>
           <h3>Route</h3>
-          <p>Pattern-match hot loops, matmuls, FFTs. Estimate GPU speedup and engineering complexity. Quantum stays stubbed until quantum is ready.</p>
+          <p>When code matches a pattern that GPUs (or eventually quantum) do well, Helios flags it with a cost-benefit. You decide whether to send it there.</p>
           <div class="verdict">→ where the time goes</div>
         </div>
       </div>
@@ -907,7 +914,7 @@
     <!-- who -->
     <section>
       <div class="section-tag reveal">Who needs this</div>
-      <h2 class="reveal">Anyone whose result <em>can't be wrong</em><br>and won't crash if it is.</h2>
+      <h2 class="reveal">When the result <em>can't be wrong</em><br>and won't crash if it is.</h2>
       <div class="domains">
         <div class="domain reveal">
           <h3>Drug discovery</h3>
@@ -929,11 +936,11 @@
       <div class="moat reveal delay-1">
         <div>
           <div class="label">Why this is the moat</div>
-          <div class="label-big">Every fix ships with a paper trail.</div>
+          <div class="label-big">We don&rsquo;t just guess.<br>We prove it.</div>
         </div>
         <div class="body">
-          <p>Linters say "this might be wrong." Helios says: <span class="key">here is the bug, here is the fix, here are twelve sandboxed test cases showing the fix preserves every other behavior of the original</span>.</p>
-          <p>Every session — original code, proposed fix, synthesized inputs, agreement results — is persisted. The dataset is the company.</p>
+          <p>Linters say &ldquo;this might be wrong.&rdquo; Copilot says &ldquo;here&rsquo;s a guess.&rdquo; Helios says: <span class="key">here is the bug, here is the fix, here are twelve sandboxed test cases showing original and fix agree on every input that doesn&rsquo;t hit the bug</span>. Research-grade evidence, hard to copy.</p>
+          <p>OpenAI and Anthropic train on GitHub &mdash; mostly the code that runs websites. Nobody trains on the messy code that runs the physical world. Nobody owns the dataset of <span class="key">(broken, fixed, proven)</span>. Every Helios session writes one row. We will.</p>
         </div>
       </div>
     </section>
@@ -941,8 +948,8 @@
     <!-- sandbox -->
     <section>
       <div class="section-tag reveal">Run it</div>
-      <h2 class="reveal">Pick a bug.<br>Watch helios <em>find it, fix it, prove it.</em></h2>
-      <p class="lead reveal delay-1" style="margin-top: 1rem;">Three bugs from real scientific Python. Each runs the actual four-stage pipeline. No setup, no signup.</p>
+      <h2 class="reveal">Real code.<br>Real bug. <em>Caught in twelve seconds.</em></h2>
+      <p class="lead reveal delay-1" style="margin-top: 1rem;">Four scientific Python files. Three silent bugs and one hot loop. Each runs the actual four-stage pipeline against your live backend. No setup, no signup. The integrate.py off-by-one is the same shape as a bug that was published, ran for six years, and changed a paper&rsquo;s conclusion.</p>
 
       <div class="sandbox reveal delay-2">
         <div class="sandbox-tabs" id="tabs">
@@ -957,6 +964,10 @@
           <button class="sandbox-tab" data-ex="converged">
             converged.py
             <span class="tag">float equality</span>
+          </button>
+          <button class="sandbox-tab" data-ex="distances">
+            distances.py
+            <span class="tag">GPU candidate</span>
           </button>
         </div>
 
@@ -1003,10 +1014,11 @@
     <!-- cta -->
     <section class="cta">
       <div class="section-tag reveal">Begin</div>
-      <h2 class="reveal">Run it on<br>your code.</h2>
-      <button class="button reveal delay-1" id="dropBtn">Drop a .py file</button>
-      <input type="file" id="fileInput" accept=".py,text/x-python" style="display:none" />
+      <h2 class="reveal">Run it on<br><em>your code.</em></h2>
+      <p class="lead reveal delay-1" style="margin-top: 1rem; max-width: 52ch;">Drop a .py file. Helios audits, fixes, verifies, and routes &mdash; and writes the (broken, fixed, proven) row to the dataset that nobody else has.</p>
+      <a class="button reveal delay-2" id="dropBtn" href="/app/" style="text-decoration:none;display:inline-block;margin-top:1.5rem;">Drop a .py file</a>
       <div class="endpoint reveal delay-2">or <code>POST /api/sessions</code></div>
+      <div class="endpoint reveal delay-2" style="margin-top:0.5rem;"><a href="/app/sessions/" style="color:var(--dim);text-decoration:none;">→ Past sessions</a></div>
     </section>
 
     <footer>
@@ -1453,6 +1465,40 @@ def is_converged(prev, curr):
           candidates: []
         }
       },
+
+      distances: {
+        filename: 'distances.py',
+        lines: '12 lines',
+        source: `# distances.py — pairwise euclidean distances
+import numpy as np
+
+def pairwise_distances(X):
+    n = len(X)
+    D = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            s = 0.0
+            for k in range(len(X[i])):
+                s += (X[i][k] - X[j][k]) ** 2
+            D[i][j] = s ** 0.5
+    return D
+`,
+        code: [
+          { html: '<span class="cm"># distances.py — pairwise euclidean distances</span>' },
+          { html: '<span class="kw">import</span> numpy <span class="kw">as</span> np' },
+          { html: '' },
+          { html: '<span class="kw">def</span> <span class="fn">pairwise_distances</span>(X):' },
+          { html: '    n = <span class="fn">len</span>(X)' },
+          { html: '    D = np.zeros((n, n))' },
+          { html: '    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n):', cls: 'bug' },
+          { html: '        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(n):', cls: 'bug' },
+          { html: '            s = <span class="num">0.0</span>' },
+          { html: '            <span class="kw">for</span> k <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(X[i])):' },
+          { html: '                s += (X[i][k] - X[j][k]) ** <span class="num">2</span>' },
+          { html: '            D[i][j] = s ** <span class="num">0.5</span>' },
+          { html: '    <span class="kw">return</span> D' },
+        ],
+      },
     };
 
     let currentEx = 'integrate';
@@ -1671,9 +1717,39 @@ def is_converged(prev, curr):
         const target = document.getElementById('body-audit');
         if (!issues.length) {
           target.insertAdjacentHTML('beforeend',
-            '<div class="route-empty">No issues found. Code looks clean.</div>');
+            '<div class="route-empty">No silent bugs. Code is correct &mdash; let&rsquo;s see if it&rsquo;s fast.</div>');
           astage.classList.remove('active');
           astage.classList.add('done');
+          // skip fix + verify, jump straight to route — useful for compute-only examples
+          ['fix','verify'].forEach(s => {
+            const stage = document.getElementById('stage-' + s);
+            stage.classList.add('done');
+            const body = document.getElementById('body-' + s);
+            body.innerHTML = '<div style="color:var(--dim);font-size:12px;font-style:italic;">skipped &mdash; no fix needed</div>';
+          });
+          await sleep(300);
+          // run route stage
+          try {
+            const rstage = document.getElementById('stage-route');
+            rstage.classList.add('active');
+            document.getElementById('status').textContent = 'route…';
+            await streamProgress('body-route',
+              ['scanning for hot patterns…','classifying candidates…','asking model for cost / benefit'], 320);
+            const route = await api('/sessions/' + session.id + '/route', { method: 'POST' });
+            const candidates = (route.gpu_candidates || []).map(c => ({
+              lines: c.line_start === c.line_end ? String(c.line_start) : (c.line_start + '–' + c.line_end),
+              pattern: c.pattern,
+              speedup: c.estimated_speedup,
+              complexity: c.complexity,
+              rationale: c.rationale,
+            }));
+            document.getElementById('body-route').insertAdjacentHTML('beforeend', renderRoute(candidates));
+            await sleep(120);
+            rstage.classList.remove('active');
+            rstage.classList.add('done');
+          } catch (e) {
+            showStageError('route', e);
+          }
           return endRun('done');
         }
         const top = issues[0];
@@ -1776,28 +1852,7 @@ def is_converged(prev, curr):
 
     document.getElementById('runBtn').addEventListener('click', runPipeline);
 
-    // ===== upload .py =====
-    const dropBtn = document.getElementById('dropBtn');
-    const fileInput = document.getElementById('fileInput');
-    dropBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const text = await file.text();
-      const key = '__upload__';
-      const lineCount = text.split('\n').length;
-      examples[key] = {
-        filename: file.name,
-        lines: lineCount + ' lines',
-        source: text,
-        code: text.split('\n').map(line => ({ html: escapeHtml(line) || '&nbsp;' })),
-      };
-      document.querySelectorAll('.sandbox-tab').forEach(x => x.classList.remove('active'));
-      loadExample(key);
-      document.querySelector('.sandbox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      await sleep(400);
-      runPipeline();
-    });
+    // CTA "Drop a .py file" is now a link to /app/ (Next.js reviewer). Upload + audit happen there.
   </script>
 </body>
 </html>

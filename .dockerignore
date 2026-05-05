@@ -11,7 +11,9 @@ backend/Dockerfile
 backend/docker-compose.yml
 .venv
 venv
-node_modules
+**/node_modules
+**/.next
+web/out
 .DS_Store
 *.md
 !web/**

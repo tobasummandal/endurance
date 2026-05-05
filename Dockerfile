@@ -29,6 +29,7 @@ COPY backend/alembic /app/alembic
 
 # Landing page + assets (everything from /web except node_modules / next build cache)
 COPY web/index.html /web/index.html
+COPY web/v2 /web/v2
 # Next.js export — mounted at /app by FastAPI
 COPY --from=reviewer /web/out /web/out
 

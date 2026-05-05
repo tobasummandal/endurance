@@ -24,6 +24,13 @@ dev = [
     "pytest-asyncio>=0.23",
     "ruff>=0.3",
 ]
+mcp = [
+    "mcp>=1.0",
+]
+
+[project.scripts]
+helios-review = "helios.agent.cli:main"
+helios-mcp = "helios.mcp_server.server:main"
 
 [tool.setuptools.packages.find]
 include = ["helios*"]

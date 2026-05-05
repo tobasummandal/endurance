@@ -515,11 +515,105 @@
       justify-content: space-between;
     }
 
+    /* file drop zone */
+    .drop-zone {
+      border: 1px dashed var(--line);
+      padding: 1rem;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      cursor: none;
+      transition: border-color .2s, background .2s, color .2s;
+      margin-bottom: .75rem;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--sun);
+      color: var(--sun);
+      background: rgba(232,163,61,0.04);
+    }
+    .drop-zone .or { color: var(--line); margin: 0 .5ch; }
+
+    .try-btn-secondary {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--sun);
+      background: transparent;
+      padding: .65rem 1.25rem;
+      border: 1px solid var(--sun);
+      cursor: none;
+      font-weight: 500;
+      transition: background .2s, color .2s;
+    }
+    .try-btn-secondary:hover { background: var(--sun); color: var(--bg); }
+    .try-btn-secondary:disabled { opacity: .4; cursor: none; }
+
+    /* 5-step how-it-works */
+    .steps {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 4rem 5vw;
+      border-top: 1px solid var(--line);
+    }
+    .steps h2 {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(28px, 3.6vw, 48px);
+      letter-spacing: -0.02em;
+      margin-bottom: 2.5rem;
+    }
+    .steps h2 em { font-style: italic; color: var(--sun); }
+    .step-list {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0;
+    }
+    .step-item {
+      padding: 1.5rem 1.25rem;
+      border-left: 1px solid var(--line);
+      transition: background .25s;
+    }
+    .step-item:first-child { border-left: none; }
+    .step-item:hover { background: rgba(232,163,61,0.03); }
+    .step-item .step-num {
+      font-family: var(--serif);
+      font-size: 36px;
+      font-weight: 300;
+      color: var(--sun);
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: 1rem;
+      opacity: .65;
+    }
+    .step-item h3 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--fg);
+      margin-bottom: .75rem;
+      font-weight: 500;
+    }
+    .step-item p {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+      color: var(--dim);
+    }
+    .step-item .key { color: var(--sun); }
+
     @media (max-width: 900px) {
       .demo, .try-grid, .info, .cta-section { grid-template-columns: 1fr; }
       .editor { border-right: none; border-bottom: 1px solid var(--line); }
       .stage-bar { grid-template-columns: repeat(2, 1fr); }
       .header .slogan { display: none; }
+      .step-list { grid-template-columns: 1fr; }
+      .step-item { border-left: none; border-top: 1px solid var(--line); }
+      .step-item:first-child { border-top: none; }
     }
   </style>
 </head>
@@ -578,6 +672,10 @@
       <div class="try-grid">
         <div class="try-pane">
           <h3>Try your own code</h3>
+          <div class="drop-zone" id="dropZone">
+            ↑ Drop a .py file <span class="or">or</span> paste below
+            <input type="file" id="fileInput" accept=".py,text/x-python" style="display:none" />
+          </div>
           <textarea id="userCode" spellcheck="false" placeholder="def integrate(f_values, dx):
     n = len(f_values)
     total = 0.0
@@ -585,11 +683,12 @@
         total += 0.5 * (f_values[i] + f_values[i+1]) * dx
     return total"></textarea>
           <div class="try-actions">
-            <button class="try-btn" id="auditBtn">▶ Audit</button>
+            <button class="try-btn" id="auditBtn">▶ Quick audit</button>
+            <button class="try-btn-secondary" id="fullPipelineBtn">▶▶ Run full pipeline</button>
             <span class="try-status" id="tryStatus">idle</span>
           </div>
           <div class="try-results" id="tryResults" style="margin-top: 1rem;">
-            <div class="empty">Findings appear here. Hits the live Helios backend.</div>
+            <div class="empty">Quick audit runs static checks inline. Full pipeline opens the reviewer with audit, fix, verify &amp; route.</div>
           </div>
         </div>
         <div class="try-pane">
@@ -628,6 +727,38 @@
         <h4>Who it's for</h4>
         <p>Researchers and engineers writing numerical Python — drug discovery, climate modeling, battery simulation, particle physics, finance, ML.</p>
         <p>Anywhere a wrong number ships and nobody notices for years.</p>
+      </div>
+    </section>
+
+    <!-- 5-step how it works -->
+    <section class="steps">
+      <h2>How it <em>actually works</em>.</h2>
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num">01</div>
+          <h3>Drop a file</h3>
+          <p>Single Python file, up to 4000 lines. Drag, drop, or paste — Helios accepts <span class="key">.py</span> source over a single API call.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">02</div>
+          <h3>Read the audit</h3>
+          <p>Severity-ranked issues with line numbers and plain-English explanations. Static AST checks merged with an LLM pass tuned for scientific bugs.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">03</div>
+          <h3>Generate a fix</h3>
+          <p>One issue at a time. Get a minimal rewrite — only the bug changes. Side-by-side diff. No surrounding cleanup, no scope creep.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">04</div>
+          <h3>Verify the fix</h3>
+          <p>Twelve synthesized inputs run through both versions in sandboxed subprocesses. Numerical agreement check at <span class="key">rtol=1e-9</span>. Per-case verdict.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">05</div>
+          <h3>Route the workload</h3>
+          <p>Hot blocks scored for <span class="key">CPU, GPU, and quantum</span> with cost-benefit. The optimizer decides where your science actually belongs.</p>
+        </div>
       </div>
     </section>
 
@@ -951,6 +1082,63 @@
     }
     bindCopy('cp1', 'pip install "helios[mcp]" && helios-mcp');
     bindCopy('cp2', '{\n  "mcpServers": {\n    "helios": { "command": "helios-mcp" }\n  }\n}');
+
+    // ============= file drop =============
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const userCode = document.getElementById('userCode');
+    let droppedFilename = 'untitled.py';
+
+    function loadFile(file) {
+      droppedFilename = file.name;
+      const reader = new FileReader();
+      reader.onload = e => {
+        userCode.value = e.target.result;
+        dropZone.innerHTML = `✓ ${file.name} (${(file.size/1024).toFixed(1)} kB) <span class="or">·</span> Replace`;
+      };
+      reader.readAsText(file);
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+    ['dragenter', 'dragover'].forEach(ev => {
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('over'); });
+    });
+    ['dragleave', 'drop'].forEach(ev => {
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('over'); });
+    });
+    dropZone.addEventListener('drop', e => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file && (file.name.endsWith('.py') || file.type === 'text/x-python')) loadFile(file);
+    });
+
+    // ============= full pipeline (create session + redirect to reviewer) =============
+    const fullBtn = document.getElementById('fullPipelineBtn');
+    fullBtn.addEventListener('click', async () => {
+      const code = userCode.value.trim();
+      if (!code) {
+        tryResults.innerHTML = '<div class="empty">Paste or drop some Python first.</div>';
+        return;
+      }
+      fullBtn.disabled = true;
+      tryStatus.textContent = 'creating session…';
+      tryResults.innerHTML = '<div class="empty">Creating session, redirecting to the reviewer…</div>';
+      try {
+        const res = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: droppedFilename, source_code: code }),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const session = await res.json();
+        window.location.href = `/app/session/?id=${encodeURIComponent(session.id)}`;
+      } catch (e) {
+        tryResults.innerHTML = `<div style="color:var(--wrong);font-size:12px;">Backend error: ${e.message}</div>
+          <div class="small">Try the quick audit, or install the MCP server to run locally.</div>`;
+        tryStatus.textContent = 'error';
+        fullBtn.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>

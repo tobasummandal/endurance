@@ -69,6 +69,94 @@ edited functions get re-audited. A new stream request with the same token
 cancels any prior in-flight stream. Per-token rate limit (default 30 burst,
 1/s refill, configurable via `LIVE_RATE_*` env vars).
 
+## Agent integrations
+
+Helios is **deliberately scoped to scientific / numerical Python** (numpy,
+scipy, torch, jax, pandas, sympy, qiskit, etc.). The detector
+(`helios/detector/scientific.py`) runs first and attaches a clear warning
+when invoked on web handlers, ORM models, or general business logic —
+findings on those files would be low-signal and we'd rather decline visibly
+than spam the user.
+
+### Pattern A — direct agent integration
+
+A coding agent (Claude Code, Cursor, Aider, etc.) calls Helios after
+generating code, via either the Python client, the CLI, or the
+function-calling tool schemas.
+
+```python
+from helios.agent import HeliosClient, review_code
+
+cl = HeliosClient(base_url="http://localhost:8000")
+review = review_code(generated_source, deep=False, client=cl)
+print(review.to_agent_text())   # paste into the agent's context
+```
+
+CLI:
+
+```bash
+# fast static review (default — sub-100ms, no LLM cost)
+helios-review path/to/file.py
+
+# full audit (static + Gemini Flash)
+helios-review --deep path/to/file.py
+
+# stdin + JSON output for an agent's tool runtime
+cat generated.py | helios-review --json -
+```
+
+Exit codes: `0` clean, `1` high/critical findings, `2` bad args, `3` HTTP/server error.
+
+Function-calling tool schemas (register with the agent SDK):
+
+```python
+from helios.agent import ANTHROPIC_TOOLS, OPENAI_TOOLS
+# ANTHROPIC_TOOLS  -> Anthropic Messages API tool list
+# OPENAI_TOOLS     -> OpenAI / Gemini function-calling shape
+```
+
+### Pattern C — MCP server
+
+Run Helios as a Model Context Protocol server. Any MCP-aware client
+(Claude Code, Cursor, Cline) discovers the tools automatically.
+
+```bash
+helios-mcp                                  # stdio transport
+HELIOS_API_URL=http://localhost:8000 helios-mcp
+```
+
+Example `~/.config/claude-code/mcp.json` entry:
+
+```json
+{
+  "mcpServers": {
+    "helios": {
+      "command": "helios-mcp",
+      "env": {
+        "HELIOS_API_URL": "http://localhost:8000"
+      }
+    }
+  }
+}
+```
+
+Tools exposed:
+
+| Tool | Purpose |
+|---|---|
+| `helios_detect_scientific` | classify code before deciding to call other tools |
+| `helios_audit`             | static + (optional) LLM audit |
+| `helios_fix_preview`       | stateless fix gen for one finding |
+| `helios_session_create`    | persist source to a Helios session |
+| `helios_session_audit`     | full audit with stable Issue ids |
+| `helios_session_fix`       | persist a fix |
+| `helios_session_verify`    | sandboxed numerical verification |
+| `helios_session_route`     | flag GPU candidates |
+
+Every tool description explicitly tells the agent the scope is scientific
+Python. The detector still runs server-side, and a `warning` field is
+attached to the response when the input doesn't look numerical.
+
 ## Threat model (sandbox)
 
 User code is run in a child Python process with `RLIMIT_AS`, `RLIMIT_CPU`,

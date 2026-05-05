@@ -1,0 +1,3 @@
+[console_scripts]
+helios-mcp = helios.mcp_server.server:main
+helios-review = helios.agent.cli:main

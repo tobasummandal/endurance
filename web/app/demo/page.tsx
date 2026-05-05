@@ -91,15 +91,7 @@ export default function DemoPage() {
           Three years of research code. Production-ready, in two minutes.
         </h1>
       </Reveal>
-      <Reveal delay={2}>
-        <p style={{ fontFamily: 'var(--prose)', fontWeight: 300, fontSize: 15, color: 'var(--fg)', opacity: 0.85, maxWidth: 720, lineHeight: 1.7, marginBottom: '2rem' }}>
-          A Monte Carlo statistical-mechanics simulator for a 2D electron gas — written by a physics PhD,
-          published in seven papers, about to be handed off to a pharma partner. Watch the handoff
-          collapse from nine months to ninety seconds.
-        </p>
-      </Reveal>
-
-      <div className="helios-tabs" role="tablist" style={{ marginBottom: '2rem' }}>
+      <div className="helios-tabs" role="tablist" style={{ marginBottom: '2rem', marginTop: '2rem' }}>
         {ACTS.map((a) => (
           <button
             key={a.key}

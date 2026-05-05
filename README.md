@@ -1,4 +1,4 @@
-# Helios
+ # Helios
 
 > The correctness layer for scientific code.
 > AUDIT silent bugs → FIX with a verified rewrite → ROUTE to the right hardware.

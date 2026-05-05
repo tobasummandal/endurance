@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HELIOS — The correctness layer for scientific code</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090d;
+      --bg-1: #0c1118;
+      --fg: #f3ece0;
+      --dim: #6e7787;
+      --line: #1a2230;
+      --sun: #E8A33D;
+      --sun-warm: #f4c46b;
+      --wrong: #E94F37;
+      --right: #7FE0E0;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --serif: 'Fraunces', Georgia, serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--mono);
+      font-weight: 300;
+      overflow-x: hidden;
+      cursor: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @media (pointer: coarse) {
+      html, body { cursor: auto; }
+      .cursor-ring, .cursor-dot { display: none !important; }
+    }
+
+    /* custom cursor */
+    .cursor-ring, .cursor-dot {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: difference;
+    }
+    .cursor-ring {
+      width: 32px; height: 32px;
+      border: 1px solid var(--fg);
+      border-radius: 50%;
+      transition: width .25s ease, height .25s ease, border-color .25s ease;
+    }
+    .cursor-dot {
+      width: 4px; height: 4px;
+      background: var(--sun);
+      border-radius: 50%;
+    }
+    .cursor-ring.hot { width: 64px; height: 64px; border-color: var(--sun); }
+
+    /* background canvas */
+    canvas#bg {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      display: block;
+    }
+
+    /* nav */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 1.5rem 4vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--dim);
+      mix-blend-mode: difference;
+    }
+    nav .brand { color: var(--fg); font-weight: 500; }
+    nav .ver { font-variant-numeric: tabular-nums; }
+
+    /* layout */
+    main {
+      position: relative;
+      z-index: 1;
+    }
+    section {
+      min-height: 100vh;
+      padding: 6rem 8vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+    .section-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1ch;
+    }
+    .section-tag::before {
+      content: '';
+      width: 32px; height: 1px;
+      background: var(--sun);
+    }
+
+    /* hero */
+    .hero {
+      min-height: 100vh;
+      align-items: center;
+      text-align: center;
+    }
+    .hero h1 {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(80px, 18vw, 280px);
+      line-height: .9;
+      letter-spacing: -0.04em;
+      font-variation-settings: 'opsz' 144;
+      position: relative;
+    }
+    .hero h1 .o {
+      color: var(--sun);
+      font-style: italic;
+      display: inline-block;
+      transform-origin: center;
+    }
+    .hero .tagline {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(20px, 2.6vw, 36px);
+      max-width: 60ch;
+      margin: 2.5rem auto 0;
+      color: var(--fg);
+      opacity: .9;
+    }
+    .hero .meta {
+      margin-top: 5rem;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3rem;
+    }
+    .hero .meta span { display: inline-flex; align-items: center; gap: 1ch; }
+    .hero .meta span::before { content: ''; width: 6px; height: 6px; background: var(--sun); border-radius: 50%; opacity: .6; }
+    .hero .meta b { color: var(--fg); font-weight: 500; }
+
+    .scroll-cue {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      color: var(--dim);
+      text-transform: uppercase;
+      animation: bob 2.4s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translate(-50%, 0); opacity: .6; }
+      50% { transform: translate(-50%, 8px); opacity: 1; }
+    }
+
+    /* the bug section */
+    .bug-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      gap: 5rem;
+      align-items: center;
+    }
+    .code {
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.85;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      padding: 1.5rem 0;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+    }
+    .code-line {
+      display: block;
+      padding: 0 1.5rem;
+      transition: background .25s, color .25s;
+      color: var(--dim);
+      white-space: pre;
+    }
+    .code-line .lineno {
+      display: inline-block;
+      width: 3ch;
+      color: var(--line);
+      user-select: none;
+      margin-right: 1.5ch;
+    }
+    .code-line .kw { color: #c08aff; }
+    .code-line .fn { color: #f4c46b; }
+    .code-line .num { color: #7FE0E0; }
+    .code-line .str { color: #a8d977; }
+    .code-line .cm { color: #5a6378; font-style: italic; }
+    .code-line.bad { color: var(--wrong); background: rgba(233, 79, 55, 0.1); position: relative; }
+    .code-line.bad::after {
+      content: '';
+      position: absolute;
+      left: 0; top: 50%;
+      width: 3px; height: 100%;
+      background: var(--wrong);
+      transform: translateY(-50%);
+    }
+    .code-line.good { color: var(--right); background: rgba(127, 224, 224, 0.06); }
+    .code-line:hover { background: rgba(232, 163, 61, 0.05); }
+
+    h2 {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(36px, 5.2vw, 84px);
+      line-height: 1.02;
+      letter-spacing: -0.025em;
+      margin-bottom: 1.5rem;
+    }
+    h2 em { font-style: italic; color: var(--sun); }
+
+    p.lead {
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.75;
+      max-width: 60ch;
+      color: var(--fg);
+      opacity: .82;
+    }
+
+    .annotation {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--wrong);
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1ch;
+    }
+    .annotation::before {
+      content: '';
+      width: 24px; height: 1px;
+      background: var(--wrong);
+    }
+
+    .flicker-wrap {
+      margin-top: 0;
+      padding: 1rem 1.5rem 1.5rem;
+      border-top: 1px solid var(--line);
+    }
+    .flicker {
+      width: 100%; height: 140px;
+      display: block;
+    }
+
+    /* pipeline */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-top: 5rem;
+    }
+    .step {
+      border: 1px solid var(--line);
+      padding: 2rem 1.75rem;
+      position: relative;
+      transition: border-color .35s, background .35s, transform .35s;
+      cursor: none;
+      overflow: hidden;
+    }
+    .step::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(232, 163, 61, 0.08), transparent 60%);
+      opacity: 0;
+      transition: opacity .4s;
+      pointer-events: none;
+    }
+    .step:hover { border-color: var(--sun); transform: translateY(-3px); }
+    .step:hover::before { opacity: 1; }
+    .step .num {
+      font-family: var(--serif);
+      font-size: 80px;
+      font-weight: 300;
+      color: var(--sun);
+      line-height: 1;
+      opacity: .55;
+      letter-spacing: -0.04em;
+    }
+    .step h3 {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--fg);
+      margin: 1.5rem 0 1rem;
+      font-weight: 500;
+    }
+    .step p {
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--dim);
+      min-height: 100px;
+    }
+    .step .verdict {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--right);
+      transform: translateY(8px);
+      opacity: .7;
+      transition: opacity .35s, transform .35s, color .35s;
+    }
+    .step:hover .verdict { opacity: 1; transform: translateY(0); color: var(--sun); }
+
+    /* who section */
+    .domains {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem;
+      margin-top: 5rem;
+    }
+    .domain {
+      border-top: 1px solid var(--line);
+      padding-top: 2rem;
+      transition: border-color .3s;
+    }
+    .domain:hover { border-color: var(--sun); }
+    .domain h3 {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(28px, 3vw, 44px);
+      font-weight: 300;
+      color: var(--sun);
+      margin-bottom: 1.25rem;
+      letter-spacing: -0.01em;
+    }
+    .domain .scenario {
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.75;
+      color: var(--fg);
+      opacity: .85;
+      margin-bottom: 2rem;
+    }
+    .domain .cost {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--wrong);
+      display: flex;
+      align-items: center;
+      gap: 1ch;
+    }
+    .domain .cost::before {
+      content: '';
+      width: 16px; height: 1px; background: var(--wrong);
+    }
+
+    /* moat callout */
+    .moat {
+      margin-top: 5rem;
+      padding: 3rem;
+      border: 1px solid var(--sun);
+      background: linear-gradient(135deg, rgba(232,163,61,0.04), rgba(232,163,61,0.0));
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 3rem;
+      align-items: center;
+    }
+    .moat .label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--sun);
+    }
+    .moat .label-big {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(28px, 3.5vw, 52px);
+      font-weight: 300;
+      color: var(--fg);
+      margin-top: 1rem;
+      line-height: 1.05;
+    }
+    .moat .body p {
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.75;
+      color: var(--fg);
+      opacity: .85;
+    }
+    .moat .body p + p { margin-top: 1rem; }
+    .moat .body .key { color: var(--sun); }
+
+    /* sandbox */
+    .sandbox {
+      margin-top: 4rem;
+      border: 1px solid var(--line);
+      background: rgba(7, 9, 13, 0.6);
+      backdrop-filter: blur(8px);
+    }
+    .sandbox-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+    }
+    .sandbox-tab {
+      flex: 1;
+      padding: 1.25rem 1.5rem;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--dim);
+      background: transparent;
+      border: none;
+      border-right: 1px solid var(--line);
+      cursor: none;
+      transition: color .2s, background .2s;
+      white-space: nowrap;
+      text-align: left;
+    }
+    .sandbox-tab:last-child { border-right: none; }
+    .sandbox-tab:hover { color: var(--fg); background: rgba(232, 163, 61, 0.04); }
+    .sandbox-tab.active { color: var(--sun); background: rgba(232, 163, 61, 0.06); position: relative; }
+    .sandbox-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 1px;
+      background: var(--sun);
+    }
+    .sandbox-tab .tag {
+      display: block;
+      font-size: 9px;
+      color: var(--dim);
+      margin-top: 4px;
+      letter-spacing: 0.2em;
+    }
+    .sandbox-tab.active .tag { color: var(--wrong); }
+
+    .sandbox-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 540px;
+    }
+    .sandbox-pane {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .pane-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .pane-head .filename {
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      gap: 1ch;
+    }
+    .pane-head .filename::before {
+      content: '';
+      width: 8px; height: 8px;
+      background: var(--sun);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--sun);
+    }
+    .pane-head .lang { color: var(--dim); font-size: 10px; }
+
+    .editor-pane { border-right: 1px solid var(--line); }
+    .editor-body {
+      flex: 1;
+      padding: 1.5rem 0;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.85;
+    }
+    .editor-body .code-line {
+      display: block;
+      padding: 0 1.5rem;
+      transition: background .2s;
+      color: var(--dim);
+      white-space: pre;
+    }
+    .editor-body .code-line .lineno {
+      display: inline-block;
+      width: 3ch;
+      color: var(--line);
+      user-select: none;
+      margin-right: 1.5ch;
+    }
+    .editor-body .code-line.bug { background: rgba(233, 79, 55, 0.10); position: relative; color: var(--fg); }
+    .editor-body .code-line.bug::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0;
+      width: 3px; height: 100%;
+      background: var(--wrong);
+    }
+    .editor-body .code-line.fixed { background: rgba(127, 224, 224, 0.08); position: relative; color: var(--fg); }
+    .editor-body .code-line.fixed::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0;
+      width: 3px; height: 100%;
+      background: var(--right);
+    }
+    .editor-body .kw { color: #c08aff; }
+    .editor-body .fn { color: #f4c46b; }
+    .editor-body .num { color: #7FE0E0; }
+    .editor-body .str { color: #a8d977; }
+    .editor-body .cm { color: #5a6378; font-style: italic; }
+
+    .results-pane { background: rgba(12, 17, 24, 0.4); }
+    .results-body {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      max-height: 540px;
+    }
+    .runner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .run-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--sun);
+      padding: .85rem 1.5rem;
+      border: none;
+      cursor: none;
+      transition: background .2s, transform .15s;
+      font-weight: 500;
+    }
+    .run-btn:hover { background: var(--sun-warm); transform: translateY(-1px); }
+    .run-btn:disabled { opacity: 0.4; transform: none; }
+    .runner .status {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .stage {
+      margin-top: 1.5rem;
+      border: 1px solid var(--line);
+      opacity: 0.35;
+      transition: opacity .4s, border-color .4s;
+    }
+    .stage.active { opacity: 1; border-color: var(--sun); }
+    .stage.done { opacity: 1; }
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1rem;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .stage.active .stage-head, .stage.done .stage-head { color: var(--fg); }
+    .stage-head .indicator {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--line);
+      transition: background .3s, box-shadow .3s;
+    }
+    .stage.active .indicator { background: var(--sun); box-shadow: 0 0 12px var(--sun); animation: pulse 1.2s ease-in-out infinite; }
+    .stage.done .indicator { background: var(--right); }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+    .stage-body {
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--fg);
+      min-height: 40px;
+    }
+    .stage-body .progress {
+      color: var(--dim);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+    .stage-body .progress span { display: block; opacity: 0; transform: translateY(4px); transition: opacity .3s, transform .3s; }
+    .stage-body .progress span.in { opacity: 1; transform: translateY(0); }
+    .stage-body .progress span::before { content: '› '; color: var(--sun); }
+
+    /* issue card */
+    .issue {
+      padding: .75rem;
+      background: rgba(233, 79, 55, 0.06);
+      border-left: 2px solid var(--wrong);
+      margin-top: .75rem;
+    }
+    .issue .meta {
+      display: flex;
+      gap: .75rem;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+    }
+    .issue .severity { color: var(--wrong); font-weight: 600; }
+    .issue .category { color: var(--dim); }
+    .issue .lineref { color: var(--sun); margin-left: auto; }
+    .issue .title { color: var(--fg); font-size: 13px; margin-bottom: .35rem; font-weight: 500; }
+    .issue .explanation { color: var(--dim); font-size: 11px; line-height: 1.6; }
+
+    /* diff */
+    .diff {
+      margin-top: .5rem;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      background: var(--bg);
+      border: 1px solid var(--line);
+    }
+    .diff-line { display: block; padding: 0 .75rem; white-space: pre; }
+    .diff-line.del { background: rgba(233, 79, 55, 0.10); color: var(--wrong); }
+    .diff-line.add { background: rgba(127, 224, 224, 0.08); color: var(--right); }
+    .diff-line.del::before { content: '- '; opacity: .7; }
+    .diff-line.add::before { content: '+ '; opacity: .7; }
+    .diff-summary { font-size: 11px; color: var(--dim); margin-top: .5rem; font-style: italic; }
+
+    /* verify table */
+    .verify-table {
+      margin-top: .5rem;
+      font-family: var(--mono);
+      font-size: 11px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .verify-table th {
+      text-align: left;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+      padding: .35rem .5rem;
+      border-bottom: 1px solid var(--line);
+      font-weight: 500;
+    }
+    .verify-table td {
+      padding: .25rem .5rem;
+      border-bottom: 1px solid rgba(26, 34, 48, 0.5);
+      color: var(--fg);
+    }
+    .verify-table td.ok { color: var(--right); }
+    .verify-table td.bad { color: var(--wrong); }
+    .verify-table tr.row-in { animation: rowIn .35s ease forwards; opacity: 0; }
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateX(-6px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .verdict-banner {
+      margin-top: .75rem;
+      padding: .75rem 1rem;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .verdict-banner.green { background: rgba(127, 224, 224, 0.06); border-left: 2px solid var(--right); color: var(--right); }
+    .verdict-banner.amber { background: rgba(232, 163, 61, 0.06); border-left: 2px solid var(--sun); color: var(--sun); }
+    .verdict-banner .note { color: var(--dim); font-size: 10px; letter-spacing: 0.05em; text-transform: none; font-style: italic; }
+
+    /* route candidate */
+    .route-card {
+      padding: .75rem;
+      background: rgba(232, 163, 61, 0.04);
+      border-left: 2px solid var(--sun);
+      margin-top: .75rem;
+    }
+    .route-card .meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: .5rem;
+    }
+    .route-card .pattern { color: var(--sun); }
+    .route-card .speedup { color: var(--right); margin-left: auto; }
+    .route-card .rationale { font-size: 11px; line-height: 1.65; color: var(--fg); opacity: .85; }
+    .route-empty {
+      padding: .75rem;
+      background: rgba(110, 119, 135, 0.05);
+      border-left: 2px solid var(--dim);
+      margin-top: .75rem;
+      font-size: 11px;
+      color: var(--dim);
+      font-style: italic;
+    }
+
+    /* CTA */
+    .cta {
+      text-align: center;
+      align-items: center;
+    }
+    .cta h2 {
+      font-size: clamp(48px, 9vw, 140px);
+      letter-spacing: -0.04em;
+    }
+    .cta .button {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--sun);
+      padding: 1.5rem 3rem;
+      margin-top: 3rem;
+      border: none;
+      cursor: none;
+      transition: background .2s, transform .2s, letter-spacing .25s;
+      font-weight: 500;
+    }
+    .cta .button:hover {
+      background: var(--sun-warm);
+      transform: translateY(-3px);
+      letter-spacing: 0.4em;
+    }
+    .cta .endpoint {
+      margin-top: 2.5rem;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--dim);
+      letter-spacing: 0.15em;
+    }
+    .cta .endpoint code {
+      color: var(--sun);
+      font-weight: 500;
+    }
+
+    /* footer */
+    footer {
+      padding: 3rem 8vw 2rem;
+      border-top: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* scroll reveal */
+    .reveal { opacity: 0; transform: translateY(48px); transition: opacity 1s ease, transform 1s ease; }
+    .reveal.in { opacity: 1; transform: translateY(0); }
+    .reveal.delay-1 { transition-delay: .1s; }
+    .reveal.delay-2 { transition-delay: .2s; }
+    .reveal.delay-3 { transition-delay: .3s; }
+
+    /* responsive */
+    @media (max-width: 1000px) {
+      .bug-grid, .pipeline, .domains { grid-template-columns: 1fr; gap: 2.5rem; }
+      .moat { grid-template-columns: 1fr; }
+      .flow-row { grid-template-columns: 60px 1fr; }
+      .flow-row p { grid-column: 2; }
+      section { padding: 4rem 6vw; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg"></canvas>
+  <div class="cursor-ring" id="ring"></div>
+  <div class="cursor-dot" id="dot"></div>
+
+  <nav>
+    <span class="brand">HELIOS</span>
+    <span class="ver">v0.1 / MVP</span>
+  </nav>
+
+  <main>
+
+    <!-- hero -->
+    <section class="hero">
+      <h1>HELI<span class="o" id="orb">O</span>S</h1>
+      <p class="tagline">The correctness layer for scientific code.<br>Find the silent bug. Verify the fix.</p>
+      <div class="meta">
+        <span>Audit</span>
+        <span>Fix</span>
+        <span>Verify</span>
+        <span>Route</span>
+        <span><b>Python</b></span>
+        <span>Sandboxed</span>
+      </div>
+      <div class="scroll-cue">scroll</div>
+    </section>
+
+    <!-- the silent bug -->
+    <section>
+      <div class="section-tag reveal">The problem</div>
+      <h2 class="reveal">Your code doesn't crash.<br><em>It lies.</em></h2>
+      <div class="bug-grid" style="margin-top: 4rem;">
+        <div>
+          <p class="lead reveal">Scientific Python is written by domain scientists, not software engineers. It compiles. It runs. It returns a number.</p>
+          <p class="lead reveal delay-1" style="margin-top: 1.5rem;">The number is wrong by a few percent. Nobody notices for years. The drug fails phase II. The climate model misprices carbon. The battery fails at scale.</p>
+          <p class="lead reveal delay-2" style="margin-top: 1.5rem; color: var(--sun); opacity: 1;">These bugs do not announce themselves. Helios finds them.</p>
+          <div class="annotation reveal delay-3">Off-by-one in the trapezoidal rule, drops the first interval</div>
+        </div>
+        <div class="code reveal delay-1">
+<span class="code-line"><span class="lineno">1</span><span class="cm"># integrate.py</span></span><span class="code-line"><span class="lineno">2</span><span class="kw">def</span> <span class="fn">integrate</span>(f_values, dx):</span><span class="code-line"><span class="lineno">3</span>    n = <span class="fn">len</span>(f_values)</span><span class="code-line"><span class="lineno">4</span>    total = <span class="num">0.0</span></span><span class="code-line bad"><span class="lineno">5</span>    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, n - <span class="num">1</span>):  <span class="cm"># off-by-one</span></span><span class="code-line"><span class="lineno">6</span>        total += <span class="num">0.5</span> * (f_values[i] + f_values[i+<span class="num">1</span>]) * dx</span><span class="code-line"><span class="lineno">7</span>    <span class="kw">return</span> total</span>
+          <div class="flicker-wrap">
+            <canvas class="flicker" id="flicker"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- pipeline -->
+    <section>
+      <div class="section-tag reveal">What it does</div>
+      <h2 class="reveal">Audit. Fix.<br><em>Verify.</em> Route.</h2>
+      <p class="lead reveal delay-1" style="margin-top: 1rem;">Four passes over a single Python file. Each one returns evidence, not opinions.</p>
+      <div class="pipeline">
+        <div class="step reveal">
+          <div class="num">01</div>
+          <h3>Audit</h3>
+          <p>Deterministic AST checks merged with an LLM pass tuned for scientific bugs. Off-by-one, unit mismatch, numerical instability, broken boundary conditions.</p>
+          <div class="verdict">→ severity-ranked findings</div>
+        </div>
+        <div class="step reveal delay-1">
+          <div class="num">02</div>
+          <h3>Fix</h3>
+          <p>For one accepted issue, generate a minimal rewrite. Only the bug changes. Returns the full file plus a one-line diff summary.</p>
+          <div class="verdict">→ clean before / after</div>
+        </div>
+        <div class="step reveal delay-2">
+          <div class="num">03</div>
+          <h3>Verify</h3>
+          <p>Synthesize 12 test inputs. Run original and fix in sandboxed subprocesses. Compare with numpy.allclose at rtol=1e-9. Report agreement per case.</p>
+          <div class="verdict">→ evidence, not vibes</div>
+        </div>
+        <div class="step reveal delay-3">
+          <div class="num">04</div>
+          <h3>Route</h3>
+          <p>Pattern-match hot loops, matmuls, FFTs. Estimate GPU speedup and engineering complexity. Quantum stays stubbed until quantum is ready.</p>
+          <div class="verdict">→ where the time goes</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- who -->
+    <section>
+      <div class="section-tag reveal">Who needs this</div>
+      <h2 class="reveal">Anyone whose result <em>can't be wrong</em><br>and won't crash if it is.</h2>
+      <div class="domains">
+        <div class="domain reveal">
+          <h3>Drug discovery</h3>
+          <p class="scenario">A docking score off by a few percent moves the wrong molecule into phase I. Two years later the trial reads out negative and nobody can reconstruct why.</p>
+          <p class="cost">Cost of one silent bug: ~$200M trial</p>
+        </div>
+        <div class="domain reveal delay-1">
+          <h3>Climate models</h3>
+          <p class="scenario">An off-by-one in a discretization loop drops a grid cell. The mean is fine. The tail is wrong. Policy follows the tail.</p>
+          <p class="cost">Cost of one silent bug: a generation</p>
+        </div>
+        <div class="domain reveal delay-2">
+          <h3>Battery design</h3>
+          <p class="scenario">A unit mismatch between mAh and Ah passes review. The simulation says it is safe at 4.2 V. The pack vents at 4.0.</p>
+          <p class="cost">Cost of one silent bug: a recall</p>
+        </div>
+      </div>
+
+      <div class="moat reveal delay-1">
+        <div>
+          <div class="label">Why this is the moat</div>
+          <div class="label-big">Every fix ships with a paper trail.</div>
+        </div>
+        <div class="body">
+          <p>Linters say "this might be wrong." Helios says: <span class="key">here is the bug, here is the fix, here are twelve sandboxed test cases showing the fix preserves every other behavior of the original</span>.</p>
+          <p>Every session — original code, proposed fix, synthesized inputs, agreement results — is persisted. The dataset is the company.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- sandbox -->
+    <section>
+      <div class="section-tag reveal">Run it</div>
+      <h2 class="reveal">Pick a bug.<br>Watch helios <em>find it, fix it, prove it.</em></h2>
+      <p class="lead reveal delay-1" style="margin-top: 1rem;">Three bugs from real scientific Python. Each runs the actual four-stage pipeline. No setup, no signup.</p>
+
+      <div class="sandbox reveal delay-2">
+        <div class="sandbox-tabs" id="tabs">
+          <button class="sandbox-tab active" data-ex="integrate">
+            integrate.py
+            <span class="tag">off-by-one</span>
+          </button>
+          <button class="sandbox-tab" data-ex="simulate">
+            simulate.py
+            <span class="tag">mutable default</span>
+          </button>
+          <button class="sandbox-tab" data-ex="converged">
+            converged.py
+            <span class="tag">float equality</span>
+          </button>
+        </div>
+
+        <div class="sandbox-grid">
+          <div class="sandbox-pane editor-pane">
+            <div class="pane-head">
+              <span class="filename" id="fname">integrate.py</span>
+              <span class="lang">Python · 7 lines</span>
+            </div>
+            <div class="editor-body" id="editor"></div>
+          </div>
+
+          <div class="sandbox-pane results-pane">
+            <div class="pane-head">
+              <span>Helios pipeline</span>
+              <div class="runner">
+                <span class="status" id="status">idle</span>
+                <button class="run-btn" id="runBtn">▶ Run Helios</button>
+              </div>
+            </div>
+            <div class="results-body">
+              <div class="stage" id="stage-audit">
+                <div class="stage-head"><span>01 · Audit</span><span class="indicator"></span></div>
+                <div class="stage-body" id="body-audit"><span class="progress" style="color:var(--dim);font-style:italic;">waiting…</span></div>
+              </div>
+              <div class="stage" id="stage-fix">
+                <div class="stage-head"><span>02 · Fix</span><span class="indicator"></span></div>
+                <div class="stage-body" id="body-fix"><span class="progress" style="color:var(--dim);font-style:italic;">waiting…</span></div>
+              </div>
+              <div class="stage" id="stage-verify">
+                <div class="stage-head"><span>03 · Verify</span><span class="indicator"></span></div>
+                <div class="stage-body" id="body-verify"><span class="progress" style="color:var(--dim);font-style:italic;">waiting…</span></div>
+              </div>
+              <div class="stage" id="stage-route">
+                <div class="stage-head"><span>04 · Route</span><span class="indicator"></span></div>
+                <div class="stage-body" id="body-route"><span class="progress" style="color:var(--dim);font-style:italic;">waiting…</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- cta -->
+    <section class="cta">
+      <div class="section-tag reveal">Begin</div>
+      <h2 class="reveal">Run it on<br>your code.</h2>
+      <button class="button reveal delay-1">Drop a .py file</button>
+      <div class="endpoint reveal delay-2">or <code>POST localhost:8000/sessions</code></div>
+    </section>
+
+    <footer>
+      <span>HELIOS — correctness layer for scientific Python</span>
+      <span>Audit · Fix · Verify · Route</span>
+      <span>v0.1 MVP</span>
+    </footer>
+  </main>
+
+  <script>
+    // ===== background canvas: solar grid + particles =====
+    const bg = document.getElementById('bg');
+    const ctx = bg.getContext('2d');
+    let W = 0, H = 0;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let mx = -9999, my = -9999, mxs = -9999, mys = -9999;
+    let scrollY = 0;
+
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      bg.width = W * DPR;
+      bg.height = H * DPR;
+      bg.style.width = W + 'px';
+      bg.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    window.addEventListener('mousemove', (e) => {
+      mx = e.clientX; my = e.clientY;
+    });
+    window.addEventListener('scroll', () => { scrollY = window.scrollY; }, { passive: true });
+
+    // particles — drifting "data points"
+    const N = 70;
+    const particles = Array.from({length: N}, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.12,
+      vy: (Math.random() - 0.5) * 0.12,
+      r: Math.random() * 1.3 + 0.3,
+    }));
+
+    let t = 0;
+    function draw() {
+      t += 0.005;
+      mxs = mxs < -9000 ? mx : mxs + (mx - mxs) * 0.08;
+      mys = mys < -9000 ? my : mys + (my - mys) * 0.08;
+
+      ctx.fillStyle = '#07090d';
+      ctx.fillRect(0, 0, W, H);
+
+      // sun glow at top, drifts very slowly with scroll
+      const sx = W * 0.5;
+      const sy = -H * 0.05 + Math.sin(t * 0.3) * 12 - scrollY * 0.05;
+      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, H * 1.0);
+      grad.addColorStop(0, 'rgba(232, 163, 61, 0.28)');
+      grad.addColorStop(0.25, 'rgba(232, 163, 61, 0.07)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // perspective grid — distorts toward cursor
+      ctx.strokeStyle = 'rgba(232, 163, 61, 0.07)';
+      ctx.lineWidth = 1;
+      const cols = 28, rows = 16;
+      const stepX = W / cols;
+      const stepY = H / rows;
+
+      // vertical lines
+      for (let i = 0; i <= cols; i++) {
+        ctx.beginPath();
+        for (let y = 0; y <= rows; y++) {
+          const px = i * stepX;
+          const py = y * stepY;
+          const dx = px - mxs, dy = py - mys;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          const k = Math.max(0, 100 - d * 0.35) * 0.6;
+          const ox = (dx / (d + 1)) * k;
+          const oy = (dy / (d + 1)) * k;
+          if (y === 0) ctx.moveTo(px + ox, py + oy);
+          else ctx.lineTo(px + ox, py + oy);
+        }
+        ctx.stroke();
+      }
+      // horizontal lines
+      for (let j = 0; j <= rows; j++) {
+        ctx.beginPath();
+        for (let x = 0; x <= cols; x++) {
+          const px = x * stepX;
+          const py = j * stepY;
+          const dx = px - mxs, dy = py - mys;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          const k = Math.max(0, 100 - d * 0.35) * 0.6;
+          const ox = (dx / (d + 1)) * k;
+          const oy = (dy / (d + 1)) * k;
+          if (x === 0) ctx.moveTo(px + ox, py + oy);
+          else ctx.lineTo(px + ox, py + oy);
+        }
+        ctx.stroke();
+      }
+
+      // grid intersection accents near cursor
+      for (let i = 0; i <= cols; i += 1) {
+        for (let j = 0; j <= rows; j += 1) {
+          const px = i * stepX;
+          const py = j * stepY;
+          const dx = px - mxs, dy = py - mys;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < 12000) {
+            const a = (1 - d2 / 12000) * 0.6;
+            ctx.fillStyle = `rgba(232, 163, 61, ${a})`;
+            ctx.fillRect(px - 1, py - 1, 2, 2);
+          }
+        }
+      }
+
+      // particles — drift, repelled by cursor
+      for (const p of particles) {
+        const dx = p.x - mxs, dy = p.y - mys;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 18000 && d2 > 1) {
+          const f = (18000 - d2) / 18000;
+          const dd = Math.sqrt(d2);
+          p.vx += (dx / dd) * f * 0.08;
+          p.vy += (dy / dd) * f * 0.08;
+        }
+        p.vx *= 0.95; p.vy *= 0.95;
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x += W; if (p.x > W) p.x -= W;
+        if (p.y < 0) p.y += H; if (p.y > H) p.y -= H;
+        ctx.fillStyle = 'rgba(243, 236, 224, 0.55)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+    // ===== custom cursor =====
+    const ring = document.getElementById('ring');
+    const dot = document.getElementById('dot');
+    let rx = 0, ry = 0;
+    document.addEventListener('mousemove', (e) => {
+      dot.style.left = e.clientX + 'px';
+      dot.style.top = e.clientY + 'px';
+    });
+    function followRing() {
+      rx += (mx - rx) * 0.18;
+      ry += (my - ry) * 0.18;
+      ring.style.left = rx + 'px';
+      ring.style.top = ry + 'px';
+      requestAnimationFrame(followRing);
+    }
+    followRing();
+    document.querySelectorAll('button, .step, .code-line, .domain, .moat, .flow-row, a').forEach(el => {
+      el.addEventListener('mouseenter', () => ring.classList.add('hot'));
+      el.addEventListener('mouseleave', () => ring.classList.remove('hot'));
+    });
+
+    // ===== step cards: cursor-position-aware glow =====
+    document.querySelectorAll('.step').forEach(step => {
+      step.addEventListener('mousemove', (e) => {
+        const r = step.getBoundingClientRect();
+        const px = ((e.clientX - r.left) / r.width) * 100;
+        const py = ((e.clientY - r.top) / r.height) * 100;
+        step.style.setProperty('--mx', px + '%');
+        step.style.setProperty('--my', py + '%');
+      });
+    });
+
+    // ===== hero orb: gentle parallax to cursor =====
+    const orb = document.getElementById('orb');
+    function orbFollow() {
+      const cx = W / 2, cy = H / 2;
+      const dx = (mx - cx) * 0.012;
+      const dy = (my - cy) * 0.012;
+      if (orb) orb.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(orbFollow);
+    }
+    orbFollow();
+
+    // ===== scroll reveal =====
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      }
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    // ===== flicker chart: TRUE vs YOUR CODE =====
+    const fc = document.getElementById('flicker');
+    const fctx = fc.getContext('2d');
+    function resizeF() {
+      const r = fc.getBoundingClientRect();
+      fc.width = r.width * DPR; fc.height = r.height * DPR;
+      fctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    setTimeout(resizeF, 80);
+    window.addEventListener('resize', resizeF);
+    let ft = 0;
+    function flicker() {
+      ft += 0.014;
+      const r = fc.getBoundingClientRect();
+      if (r.width === 0) { requestAnimationFrame(flicker); return; }
+      fctx.clearRect(0, 0, r.width, r.height);
+
+      // baseline
+      fctx.strokeStyle = 'rgba(110, 119, 135, 0.25)';
+      fctx.lineWidth = 1;
+      fctx.beginPath();
+      fctx.moveTo(0, r.height - 18);
+      fctx.lineTo(r.width, r.height - 18);
+      fctx.stroke();
+
+      const baseY = r.height - 18;
+      const amp = (r.height - 36) * 0.5;
+
+      // TRUE curve (cyan)
+      fctx.strokeStyle = 'rgba(127, 224, 224, 0.85)';
+      fctx.lineWidth = 1.5;
+      fctx.beginPath();
+      for (let x = 0; x <= r.width; x += 2) {
+        const phase = x * 0.018;
+        const y = baseY - (Math.sin(phase + ft) * 0.6 + Math.sin(phase * 1.6 + ft * 0.7) * 0.4 + 1) * amp * 0.5 - 8;
+        if (x === 0) fctx.moveTo(x, y); else fctx.lineTo(x, y);
+      }
+      fctx.stroke();
+
+      // YOUR CODE curve (red, slightly attenuated — the silent error)
+      fctx.strokeStyle = 'rgba(233, 79, 55, 0.85)';
+      fctx.lineWidth = 1.5;
+      fctx.beginPath();
+      for (let x = 0; x <= r.width; x += 2) {
+        const phase = x * 0.018;
+        const trueVal = (Math.sin(phase + ft) * 0.6 + Math.sin(phase * 1.6 + ft * 0.7) * 0.4 + 1) * amp * 0.5;
+        const y = baseY - trueVal * 0.93 - 8;
+        if (x === 0) fctx.moveTo(x, y); else fctx.lineTo(x, y);
+      }
+      fctx.stroke();
+
+      // legend
+      fctx.font = '500 10px JetBrains Mono';
+      fctx.fillStyle = 'rgba(127, 224, 224, 0.95)';
+      fctx.fillText('● TRUE', 6, 14);
+      fctx.fillStyle = 'rgba(233, 79, 55, 0.95)';
+      fctx.fillText('● YOUR CODE', 70, 14);
+      fctx.fillStyle = 'rgba(110, 119, 135, 0.85)';
+      fctx.textAlign = 'right';
+      fctx.fillText('~5% off · invisible', r.width - 8, 14);
+      fctx.textAlign = 'left';
+
+      requestAnimationFrame(flicker);
+    }
+    flicker();
+
+    // ===== sandbox: examples + animated pipeline =====
+    const examples = {
+      integrate: {
+        filename: 'integrate.py',
+        lines: '7 lines',
+        code: [
+          { html: '<span class="cm"># integrate.py — trapezoidal rule</span>' },
+          { html: '<span class="kw">def</span> <span class="fn">integrate</span>(f_values, dx):' },
+          { html: '    n = <span class="fn">len</span>(f_values)' },
+          { html: '    total = <span class="num">0.0</span>' },
+          { html: '    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, n - <span class="num">1</span>):  <span class="cm"># off-by-one</span>', cls: 'bug' },
+          { html: '        total += <span class="num">0.5</span> * (f_values[i] + f_values[i+<span class="num">1</span>]) * dx' },
+          { html: '    <span class="kw">return</span> total' },
+        ],
+        audit: {
+          progress: ['parsing AST…', 'static checks: range(1, N) over indexable', 'LLM audit: scientific bug categories', 'merging + deduping'],
+          issue: {
+            severity: 'HIGH', category: 'off_by_one', line: '5',
+            title: 'Loop starts at index 1 — possible off-by-one',
+            explanation: 'range(1, n - 1) skips index 0. The trapezoidal rule should integrate over every interval. Drops the first interval, silently wrong.'
+          }
+        },
+        fix: {
+          progress: ['identifying target function…', 'generating minimal rewrite…', 'validating syntax'],
+          diff: [
+            { type: 'del', text: '    for i in range(1, n - 1):  # off-by-one' },
+            { type: 'add', text: '    for i in range(0, n - 1):' },
+          ],
+          summary: 'Changed range(1, n - 1) → range(0, n - 1) so the first interval is included.'
+        },
+        verify: {
+          progress: ['synthesizing 12 inputs…', 'spawning sandbox A (original)…', 'spawning sandbox B (fix)…', 'comparing outputs…'],
+          rows: [
+            ['1', '[0.0, 0.5, 1.0, 1.5, 2.0]', '1.875', '2.000', false],
+            ['2', '[1.0, 1.0, 1.0, 1.0]', '2.000', '3.000', false],
+            ['3', '[0.0, 0.0, 0.0]', '0.000', '0.000', true],
+            ['4', '[2.0, 4.0, 6.0, 8.0]', '14.00', '20.00', false],
+            ['5', '[1e-9, 1e-9, 1e-9]', '1e-9', '2e-9', false],
+            ['6', '[100, 200, 300, 400, 500]', '900.0', '1500.', false],
+            ['7', '[]', 'ValueError', 'ValueError', true, 'both raised ValueError'],
+            ['8', '[3.14]', '0.000', '0.000', true],
+            ['9', '[-1, 1, -1, 1]', '0.000', '0.000', true],
+            ['10', '[1.0, 2.0]', '0.000', '1.500', false],
+            ['11', '[0.5, 1.5, 2.5, 3.5]', '4.000', '6.000', false],
+            ['12', '[1e6, 2e6, 3e6]', '2.5e6', '4.5e6', false],
+          ],
+          verdict: 'partial', passed: 4, failed: 8,
+          banner: 'Fix changes behavior on 8 / 12 inputs',
+          note: 'Disagreement is the bug. Cases 3, 7, 8, 9 hit zero or one-element edges where the bug doesn\'t manifest.'
+        },
+        route: {
+          progress: ['scanning for hot patterns…', 'pattern: nested numeric reduction', 'asking model for cost / benefit'],
+          candidates: [
+            { lines: '5–6', pattern: 'numeric reduction', speedup: '5–20×', complexity: 'low',
+              rationale: 'Element-wise array reduction. Replace with np.trapz, or vectorize with np.sum + slicing. GPU only worth it for n > 10⁶.' }
+          ]
+        }
+      },
+
+      simulate: {
+        filename: 'simulate.py',
+        lines: '6 lines',
+        code: [
+          { html: '<span class="cm"># simulate.py — running history of states</span>' },
+          { html: '<span class="kw">def</span> <span class="fn">simulate</span>(steps, history=[]):  <span class="cm"># mutable default!</span>', cls: 'bug' },
+          { html: '    state = <span class="num">0.0</span>' },
+          { html: '    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(steps):' },
+          { html: '        state += <span class="num">1.0</span>' },
+          { html: '        history.append(state)' },
+          { html: '    <span class="kw">return</span> history' },
+        ],
+        audit: {
+          progress: ['parsing AST…', 'static checks: mutable default detected', 'LLM audit: state-leak risk'],
+          issue: {
+            severity: 'MEDIUM', category: 'mutable_default', line: '2',
+            title: 'Mutable default argument in simulate',
+            explanation: 'history=[] is created once at definition time and shared across every call. Computed state leaks between invocations and corrupts results that look reproducible.'
+          }
+        },
+        fix: {
+          progress: ['identifying target function…', 'generating minimal rewrite…', 'validating syntax'],
+          diff: [
+            { type: 'del', text: 'def simulate(steps, history=[]):' },
+            { type: 'add', text: 'def simulate(steps, history=None):' },
+            { type: 'add', text: '    if history is None: history = []' },
+          ],
+          summary: 'Replaced mutable default with None sentinel; allocate fresh list inside the function.'
+        },
+        verify: {
+          progress: ['synthesizing 12 inputs…', 'spawning sandbox A (original)…', 'spawning sandbox B (fix)…', 'comparing outputs…'],
+          rows: [
+            ['1', '(3,)', 'len=3', 'len=3', true],
+            ['2', '(2,)', 'len=5', 'len=2', false],
+            ['3', '(1,)', 'len=6', 'len=1', false],
+            ['4', '(4,)', 'len=10', 'len=4', false],
+            ['5', '(0,)', 'len=10', 'len=0', false],
+            ['6', '(5,)', 'len=15', 'len=5', false],
+            ['7', '(2,)', 'len=17', 'len=2', false],
+            ['8', '(1,)', 'len=18', 'len=1', false],
+            ['9', '(3,)', 'len=21', 'len=3', false],
+            ['10', '(7,)', 'len=28', 'len=7', false],
+            ['11', '(2,)', 'len=30', 'len=2', false],
+            ['12', '(1,)', 'len=31', 'len=1', false],
+          ],
+          verdict: 'partial', passed: 1, failed: 11,
+          banner: 'Bug confirmed: state leaks across calls (1 / 12 agree)',
+          note: 'First call agrees by coincidence. Every subsequent call shows the leak — the original list grows monotonically.'
+        },
+        route: {
+          progress: ['scanning for hot patterns…', 'no nested loops, no matmul, no FFT'],
+          candidates: []
+        }
+      },
+
+      converged: {
+        filename: 'converged.py',
+        lines: '3 lines',
+        code: [
+          { html: '<span class="cm"># converged.py — iterative solver convergence check</span>' },
+          { html: '<span class="kw">def</span> <span class="fn">is_converged</span>(prev, curr):' },
+          { html: '    <span class="kw">return</span> <span class="fn">abs</span>(prev - curr) == <span class="num">0.0</span>  <span class="cm"># float ==</span>', cls: 'bug' },
+        ],
+        audit: {
+          progress: ['parsing AST…', 'static checks: float equality detected', 'LLM audit: convergence loop risk'],
+          issue: {
+            severity: 'MEDIUM', category: 'float_equality', line: '3',
+            title: 'Float equality comparison',
+            explanation: 'Comparing floats with == is unreliable due to rounding. Iterative solvers may never reach exact zero — the loop never converges, or only converges by accident.'
+          }
+        },
+        fix: {
+          progress: ['identifying target function…', 'generating minimal rewrite…', 'validating syntax'],
+          diff: [
+            { type: 'del', text: '    return abs(prev - curr) == 0.0' },
+            { type: 'add', text: '    return abs(prev - curr) < 1e-9' },
+          ],
+          summary: 'Replaced exact float equality with a tolerance-based check (rtol=1e-9).'
+        },
+        verify: {
+          progress: ['synthesizing 12 inputs…', 'spawning sandbox A (original)…', 'spawning sandbox B (fix)…', 'comparing outputs…'],
+          rows: [
+            ['1', '(1.0, 1.0)', 'True', 'True', true],
+            ['2', '(2.0, 1.0)', 'False', 'False', true],
+            ['3', '(1.0, 1.0+1e-15)', 'False', 'True', false],
+            ['4', '(0.1+0.2, 0.3)', 'False', 'True', false],
+            ['5', '(0.0, 0.0)', 'True', 'True', true],
+            ['6', '(1e10, 1e10)', 'True', 'True', true],
+            ['7', '(1.0, 2.0)', 'False', 'False', true],
+            ['8', '(-1.0, -1.0)', 'True', 'True', true],
+            ['9', '(1e-20, 0.0)', 'False', 'True', false],
+            ['10', '(3.14, 3.14)', 'True', 'True', true],
+            ['11', '(1.0, 1.0+1e-16)', 'False', 'True', false],
+            ['12', '(5.5, 5.5)', 'True', 'True', true],
+          ],
+          verdict: 'partial', passed: 8, failed: 4,
+          banner: '8 / 12 agree · 4 disagree where fix accepts near-zero',
+          note: 'The 4 disagreements are exactly the inputs the bug would have rejected — sub-epsilon differences that should count as converged.'
+        },
+        route: {
+          progress: ['scanning for hot patterns…', 'no nested loops, no matmul, no FFT'],
+          candidates: []
+        }
+      },
+    };
+
+    let currentEx = 'integrate';
+    let isRunning = false;
+
+    function loadExample(key) {
+      const ex = examples[key];
+      currentEx = key;
+      document.getElementById('fname').textContent = ex.filename;
+      document.querySelector('.pane-head .lang').textContent = 'Python · ' + ex.lines;
+      const editor = document.getElementById('editor');
+      editor.innerHTML = ex.code.map((ln, i) => {
+        const lineno = String(i + 1).padStart(2, ' ');
+        return `<span class="code-line ${ln.cls || ''}"><span class="lineno">${lineno}</span>${ln.html}</span>`;
+      }).join('');
+      // reset stages
+      ['audit','fix','verify','route'].forEach(s => {
+        const stage = document.getElementById('stage-' + s);
+        stage.classList.remove('active', 'done');
+        document.getElementById('body-' + s).innerHTML = '<span class="progress" style="color:var(--dim);font-style:italic;">waiting…</span>';
+      });
+      document.getElementById('status').textContent = 'idle';
+    }
+
+    document.querySelectorAll('.sandbox-tab').forEach(t => {
+      t.addEventListener('click', () => {
+        if (isRunning) return;
+        document.querySelectorAll('.sandbox-tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        loadExample(t.dataset.ex);
+      });
+    });
+    loadExample('integrate');
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function streamProgress(bodyId, lines, perLineMs = 360) {
+      const body = document.getElementById(bodyId);
+      body.innerHTML = '<div class="progress"></div>';
+      const wrap = body.querySelector('.progress');
+      for (const line of lines) {
+        const span = document.createElement('span');
+        span.textContent = line;
+        wrap.appendChild(span);
+        await sleep(40);
+        span.classList.add('in');
+        await sleep(perLineMs - 40);
+      }
+    }
+
+    function renderIssue(issue) {
+      return `
+        <div class="issue">
+          <div class="meta">
+            <span class="severity">${issue.severity}</span>
+            <span class="category">${issue.category}</span>
+            <span class="lineref">line ${issue.line}</span>
+          </div>
+          <div class="title">${issue.title}</div>
+          <div class="explanation">${issue.explanation}</div>
+        </div>`;
+    }
+
+    function renderDiff(diff, summary) {
+      const lines = diff.map(d => `<span class="diff-line ${d.type}">${escapeHtml(d.text)}</span>`).join('');
+      return `<div class="diff">${lines}</div><div class="diff-summary">${summary}</div>`;
+    }
+
+    function renderVerify(v) {
+      const head = `<table class="verify-table"><thead><tr>
+        <th>#</th><th>input</th><th>original</th><th>fix</th><th>agree</th></tr></thead><tbody id="vtb"></tbody></table>`;
+      const banner = `<div class="verdict-banner ${v.passed === v.rows.length ? 'green' : 'amber'}">
+        <span>${v.banner}</span><span class="note">${v.note}</span></div>`;
+      return head + '<div id="vbanner" style="opacity:0;transition:opacity .4s;">'+banner+'</div>';
+    }
+
+    async function fillVerifyRows(rows) {
+      const tb = document.getElementById('vtb');
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        const note = r[5] ? `<td colspan="5" style="font-size:10px;color:var(--dim);font-style:italic;padding-left:2rem;">↳ ${r[5]}</td>` : '';
+        const agree = r[4] ? '<td class="ok">✓</td>' : '<td class="bad">✗</td>';
+        const tr = document.createElement('tr');
+        tr.className = 'row-in';
+        tr.style.animationDelay = '0ms';
+        tr.innerHTML = `<td>${r[0]}</td><td>${escapeHtml(r[1])}</td><td>${escapeHtml(r[2])}</td><td>${escapeHtml(r[3])}</td>${agree}`;
+        tb.appendChild(tr);
+        await sleep(90);
+      }
+      await sleep(150);
+      const banner = document.getElementById('vbanner');
+      if (banner) banner.style.opacity = '1';
+    }
+
+    function renderRoute(candidates) {
+      if (!candidates.length) {
+        return `<div class="route-empty">No GPU candidates. Function is scalar / non-array; helios doesn't recommend acceleration.</div>`;
+      }
+      return candidates.map(c => `
+        <div class="route-card">
+          <div class="meta">
+            <span>lines ${c.lines}</span>
+            <span class="pattern">${c.pattern}</span>
+            <span class="speedup">${c.speedup} · ${c.complexity}</span>
+          </div>
+          <div class="rationale">${c.rationale}</div>
+        </div>`).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function runStage(name, body, render) {
+      const stage = document.getElementById('stage-' + name);
+      stage.classList.add('active');
+      document.getElementById('status').textContent = name + '…';
+      await streamProgress('body-' + name, body.progress, name === 'verify' ? 420 : 320);
+      const target = document.getElementById('body-' + name);
+      target.insertAdjacentHTML('beforeend', render());
+      await sleep(120);
+      stage.classList.remove('active');
+      stage.classList.add('done');
+    }
+
+    async function runPipeline() {
+      if (isRunning) return;
+      isRunning = true;
+      document.getElementById('runBtn').disabled = true;
+      document.getElementById('runBtn').textContent = '◉ Running';
+      // reset
+      ['audit','fix','verify','route'].forEach(s => {
+        const stage = document.getElementById('stage-' + s);
+        stage.classList.remove('active', 'done');
+        document.getElementById('body-' + s).innerHTML = '<span class="progress" style="color:var(--dim);font-style:italic;">queued…</span>';
+      });
+
+      const ex = examples[currentEx];
+      await runStage('audit', ex.audit, () => renderIssue(ex.audit.issue));
+      await sleep(300);
+      await runStage('fix', ex.fix, () => renderDiff(ex.fix.diff, ex.fix.summary));
+      await sleep(300);
+
+      // verify is custom — we want the streaming row insertion
+      const vstage = document.getElementById('stage-verify');
+      vstage.classList.add('active');
+      document.getElementById('status').textContent = 'verify…';
+      await streamProgress('body-verify', ex.verify.progress, 420);
+      document.getElementById('body-verify').insertAdjacentHTML('beforeend', renderVerify(ex.verify));
+      await fillVerifyRows(ex.verify.rows);
+      vstage.classList.remove('active');
+      vstage.classList.add('done');
+
+      await sleep(300);
+      await runStage('route', ex.route, () => renderRoute(ex.route.candidates));
+
+      document.getElementById('status').textContent = 'done';
+      document.getElementById('runBtn').disabled = false;
+      document.getElementById('runBtn').textContent = '↻ Run again';
+      isRunning = false;
+    }
+
+    document.getElementById('runBtn').addEventListener('click', runPipeline);
+  </script>
+</body>
+</html>

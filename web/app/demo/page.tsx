@@ -86,11 +86,6 @@ export default function DemoPage() {
       <Reveal>
         <div className="section-tag">Demo · mc_2deg_thermo_init.py</div>
       </Reveal>
-      <Reveal delay={1}>
-        <h1 className="helios-h" style={{ marginBottom: '0.75rem' }}>
-          Three years of research code. Production-ready, in two minutes.
-        </h1>
-      </Reveal>
       <div className="helios-tabs" role="tablist" style={{ marginBottom: '2rem', marginTop: '2rem' }}>
         {ACTS.map((a) => (
           <button

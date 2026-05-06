@@ -27,9 +27,9 @@ const ACTS: { key: Act; label: string; subtitle: string }[] = [
   { key: 'audit', label: '01 · audit', subtitle: 'silent bugs, twelve seconds' },
   { key: 'trace', label: '02 · reasoning trace', subtitle: 'the moat, made tangible' },
   { key: 'refactor', label: '03 · refactor + fix', subtitle: 'research → production' },
-  { key: 'verify', label: '04 · verify', subtitle: '12/12 cases agree' },
-  { key: 'question', label: '05 · researcher loop', subtitle: 'Helios has a question' },
-  { key: 'route', label: '06 · route', subtitle: 'GPU today, quantum tomorrow' },
+  { key: 'route', label: '04 · route', subtitle: 'GPU today, quantum tomorrow' },
+  { key: 'verify', label: '05 · verify', subtitle: '12/12 cases agree' },
+  { key: 'question', label: '06 · researcher loop', subtitle: 'Helios has a question' },
 ];
 
 function toIssue(d: DemoIssue): Issue {
@@ -159,8 +159,8 @@ export default function DemoPage() {
               <div className="section-tag" style={{ marginBottom: '0.75rem' }}>Refactor · annotations</div>
               {fix ? <RefactorAnnotations fix={fix} /> : <Loading />}
               <div style={{ marginTop: '1.25rem' }}>
-                <button className="helios-btn primary" onClick={() => setAct('verify')}>
-                  ✓ Verify
+                <button className="helios-btn primary" onClick={() => setAct('route')}>
+                  → Hardware routing
                 </button>
               </div>
             </>
@@ -192,11 +192,6 @@ export default function DemoPage() {
             <>
               <div className="section-tag" style={{ marginBottom: '0.75rem' }}>Researcher in the loop</div>
               {question ? <QuestionCard question={question} /> : <Loading />}
-              <div style={{ marginTop: '1.25rem' }}>
-                <button className="helios-btn primary" onClick={() => setAct('route')}>
-                  → Hardware routing
-                </button>
-              </div>
             </>
           }
         />
@@ -206,6 +201,11 @@ export default function DemoPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="section-tag">Hardware routing — recommendations</div>
           {route ? <RouteThreeColumn route={route} /> : <Loading />}
+          <div>
+            <button className="helios-btn primary" onClick={() => setAct('verify')}>
+              ✓ Verify
+            </button>
+          </div>
         </div>
       )}
     </section>

@@ -115,4 +115,4 @@ Languages other than Python, multi-file projects, real on-hardware quantum execu
 
 ## License
 
-TBD.
+MIT

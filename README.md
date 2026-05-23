@@ -1,6 +1,6 @@
 # Helios
 
-Scientific Python — written by domain scientists, not software engineers — is full of silent bugs: off-by-one in numerical integration, unit mismatches, subtractive cancellation, broken boundary conditions. They don't crash. They produce results that look right and are wrong. Helios ingests a researcher's file, flags the silent bugs, generates a fix that is **verified** against synthesized test inputs, and routes hot loops to the hardware that should run them.
+Scientific Python, written by domain scientists, not software engineers, is full of silent bugs: off-by-one in numerical integration, unit mismatches, subtractive cancellation, broken boundary conditions. They don't crash. They produce results that look right and are wrong. Helios ingests a researcher's file, flags the silent bugs, generates a fix that is **verified** against synthesized test inputs, and routes hot loops to the hardware that should run them.
 
 ## Repo layout
 

@@ -105,14 +105,6 @@ See `backend/helios/schemas.py` (Pydantic) — frontend mirrors these in `web/li
 - **Backend:** Python 3.11+, FastAPI, Pydantic v2, SQLModel, Postgres (SQLite in dev), Gemini via `google-genai`, sandboxed subprocess execution with `RLIMIT_*`
 - **Frontend:** Next.js 14 App Router (static export, `basePath="/app"`), TypeScript, Monaco editor, custom diff renderer, canvas-based reveal animations
 
-## Deploy
-
-The repo's top-level `Dockerfile` builds the Next.js app, copies the static export into the backend image, and runs `uvicorn`. One Railway service hosts everything; CORS is same-origin in production. To run the frontend on a separate origin (e.g. Vercel), broaden `allow_origins` in `backend/helios/main.py` (currently hard-coded to `localhost:3000`).
-
-## Out of scope (MVP)
-
-Languages other than Python, multi-file projects, real on-hardware quantum execution (the quantum demo is a scheduling/routing visualization, not a QPU dispatcher), auth/billing, GitHub PR integration, formal verification.
-
 ## License
 
 MIT
